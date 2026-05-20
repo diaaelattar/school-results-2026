@@ -4,28 +4,34 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>بوابة رفع نتائج المدارس 2026</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
   :root {
     --green:#1D9E75;--green-light:#E1F5EE;--green-dark:#0F6E56;
-    --red:#E24B4A;--red-light:#FCEBEB;
-    --gray:#F1EFE8;--border:#D3D1C7;
-    --text:#2C2C2A;--muted:#5F5E5A;--white:#fff;
-    --shadow:0 2px 12px rgba(0,0,0,0.08);
+    --red:#E24B4A;--red-light:#FCEBEB;--amber:#BA7517;--amber-light:#FAEEDA;
+    --gray:#F1EFE8;--border:#D3D1C7;--text:#2C2C2A;--muted:#5F5E5A;
+    --white:#fff;--shadow:0 2px 12px rgba(0,0,0,0.08);
   }
   *{box-sizing:border-box;margin:0;padding:0}
   body{font-family:'Segoe UI','Cairo',Tahoma,Arial,sans-serif;background:linear-gradient(135deg,#E1F5EE,#f8faf8);min-height:100vh;padding:2rem 1rem;color:var(--text)}
-  .wrap{max-width:660px;margin:0 auto}
-  .header{text-align:center;background:var(--white);border-radius:16px;padding:2rem;margin-bottom:1.5rem;box-shadow:var(--shadow);border-top:5px solid var(--green)}
-  .header .icon{font-size:3rem;margin-bottom:.5rem}
-  .header h1{font-size:1.55rem;color:var(--green-dark);margin-bottom:.4rem}
-  .header p{color:var(--muted);font-size:.9rem}
+  .wrap{max-width:680px;margin:0 auto}
+
+  /* Header */
+  .header{text-align:center;background:var(--white);border-radius:16px;padding:1.8rem 1.5rem;margin-bottom:1.4rem;box-shadow:var(--shadow);border-top:5px solid var(--green)}
+  .header .icon{font-size:2.8rem;margin-bottom:.4rem}
+  .header h1{font-size:1.5rem;color:var(--green-dark);margin-bottom:.3rem}
+  .header p{color:var(--muted);font-size:.88rem}
+
+  /* Card */
   .card{background:var(--white);border-radius:12px;padding:1.4rem 1.6rem;margin-bottom:1.2rem;box-shadow:var(--shadow);border:1px solid var(--border)}
-  .card h2{font-size:1rem;color:var(--green-dark);border-bottom:1px solid var(--gray);padding-bottom:.7rem;margin-bottom:1rem}
+  .card h2{font-size:.98rem;color:var(--green-dark);border-bottom:1px solid var(--gray);padding-bottom:.65rem;margin-bottom:1rem;display:flex;align-items:center;gap:.5rem}
+
+  /* Form elements */
   label{display:block;font-size:.85rem;font-weight:600;margin-bottom:.4rem}
-  input[type=text],input[type=number]{width:100%;padding:10px 13px;border:1.5px solid var(--border);border-radius:8px;font-size:1rem;font-family:inherit;transition:border .2s;text-align:center;direction:rtl}
-  input[type=text]{text-align:right}
-  input:focus{outline:none;border-color:var(--green);box-shadow:0 0 0 3px rgba(29,158,117,.12)}
-  input.err{border-color:var(--red)!important}
+  select,input[type=number]{width:100%;padding:10px 13px;border:1.5px solid var(--border);border-radius:8px;font-size:1rem;font-family:inherit;transition:border .2s;background:var(--white)}
+  select{cursor:pointer}
+  select:focus,input:focus{outline:none;border-color:var(--green);box-shadow:0 0 0 3px rgba(29,158,117,.12)}
+  input.err,select.err{border-color:var(--red)!important}
   .emsg{color:var(--red);font-size:.78rem;margin-top:.3rem;display:none}
   .emsg.on{display:block}
   .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.9rem}
@@ -33,28 +39,52 @@
   .grade-tag{font-size:.82rem;font-weight:700;color:var(--green-dark);background:var(--green-light);padding:.35rem .75rem;border-radius:6px;display:inline-block;margin-bottom:.75rem}
   .grade-sec{margin-bottom:1.4rem}
   .grade-sec:last-child{margin-bottom:0}
+
+  /* Mode tabs */
+  .tabs{display:flex;background:var(--gray);border-radius:10px;padding:4px;margin-bottom:1.3rem;gap:4px}
+  .tab{flex:1;padding:9px;text-align:center;border:none;background:transparent;border-radius:7px;cursor:pointer;font-size:.88rem;font-family:inherit;font-weight:500;color:var(--muted);transition:all .2s}
+  .tab.active{background:var(--white);color:var(--green-dark);font-weight:700;box-shadow:0 1px 4px rgba(0,0,0,.1)}
+
+  /* Upload zone */
+  .upload-zone{border:2px dashed var(--border);border-radius:10px;padding:2rem;text-align:center;cursor:pointer;transition:all .2s;background:var(--gray)}
+  .upload-zone:hover,.upload-zone.drag{border-color:var(--green);background:var(--green-light)}
+  .upload-zone .uz-icon{font-size:2.5rem;margin-bottom:.6rem}
+  .upload-zone p{color:var(--muted);font-size:.9rem;margin-bottom:.4rem}
+  .upload-zone small{color:#aaa;font-size:.78rem}
+  .upload-zone input{display:none}
+  .parsed-badge{background:var(--green-light);color:var(--green-dark);border:1px solid #9FE1CB;border-radius:8px;padding:.7rem 1rem;margin-top:1rem;display:none;align-items:center;gap:.6rem;font-size:.88rem;font-weight:600}
+  .parsed-badge.on{display:flex}
+  .dl-btn{display:inline-flex;align-items:center;gap:.4rem;padding:8px 16px;background:var(--amber-light);color:var(--amber);border:1px solid #FAC775;border-radius:7px;font-size:.85rem;font-weight:600;text-decoration:none;cursor:pointer;font-family:inherit;transition:background .2s}
+  .dl-btn:hover{background:#FAC775}
+
+  /* Alerts */
   .alert{padding:.9rem 1.1rem;border-radius:8px;margin-bottom:1rem;font-size:.88rem;display:none;align-items:flex-start;gap:.6rem}
   .alert.on{display:flex}
   .alert.error{background:var(--red-light);color:#7B1D1D;border:1px solid #F7C1C1}
   .alert.success{background:var(--green-light);color:var(--green-dark);border:1px solid #9FE1CB}
-  .btn{width:100%;padding:13px;background:var(--green);color:#fff;border:none;border-radius:10px;font-size:1.05rem;font-weight:700;font-family:inherit;cursor:pointer;transition:background .2s,transform .1s}
+  .alert.warn{background:var(--amber-light);color:#7F4900;border:1px solid #FAC775}
+
+  /* Buttons */
+  .btn{width:100%;padding:13px;background:var(--green);color:#fff;border:none;border-radius:10px;font-size:1.05rem;font-weight:700;font-family:inherit;cursor:pointer;transition:background .2s,transform .1s;display:flex;align-items:center;justify-content:center;gap:.5rem}
   .btn:hover{background:var(--green-dark)}
   .btn:active{transform:scale(.98)}
   .btn:disabled{background:#9BADA7;cursor:not-allowed}
-  .spin{display:none;width:16px;height:16px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:sp .65s linear infinite;vertical-align:middle;margin-right:.5rem}
+  .spin{width:17px;height:17px;border:2px solid rgba(255,255,255,.35);border-top-color:#fff;border-radius:50%;animation:sp .65s linear infinite;display:none}
   @keyframes sp{to{transform:rotate(360deg)}}
+
+  /* Success */
   #ok{display:none;text-align:center;padding:2.5rem 1.5rem}
   #ok.on{display:block}
   #fw.gone{display:none}
-  .ok-icon{font-size:4.5rem;margin-bottom:.8rem}
-  #ok h2{font-size:1.4rem;color:var(--green-dark);margin-bottom:.4rem}
-  #ok p{color:var(--muted);font-size:.9rem}
+  .ok-icon{font-size:4rem;margin-bottom:.8rem}
+  #ok h2{font-size:1.35rem;color:var(--green-dark);margin-bottom:.4rem}
   .btn-new{margin-top:1.3rem;padding:9px 26px;background:var(--white);color:var(--green);border:2px solid var(--green);border-radius:8px;font-size:.95rem;font-family:inherit;cursor:pointer;font-weight:600;transition:background .2s}
   .btn-new:hover{background:var(--green-light)}
-  .alink{text-align:center;margin-top:1.2rem}
+  .alink{text-align:center;margin-top:1rem}
   .alink a{color:var(--muted);font-size:.82rem;text-decoration:none}
   .alink a:hover{color:var(--green)}
   .req{color:var(--red)}
+  .school-type{font-size:.75rem;color:var(--muted);margin-right:.3rem}
 </style>
 </head>
 <body>
@@ -62,113 +92,297 @@
   <div class="header">
     <div class="icon">🏫</div>
     <h1>بوابة رفع نتائج المدارس 2026</h1>
-    <p>أدخل بيانات مدرستك بدقة ثم اضغط إرسال — تصل البيانات فوراً للإدارة</p>
+    <p>إدارة العمرانية التعليمية — اختار مدرستك وأدخل البيانات أو ارفع ملف Excel</p>
   </div>
 
   <div id="fw">
     <div id="gerr" class="alert error"><span>⚠️</span><span id="gerr-msg"></span></div>
+    <div id="dup-warn" class="alert warn"><span>⚠️</span><span id="dup-msg"></span></div>
 
+    <!-- اختيار المدرسة -->
     <div class="card">
-      <h2>🏫 بيانات المدرسة</h2>
+      <h2>🏫 اختر مدرستك</h2>
       <label>اسم المدرسة <span class="req">*</span></label>
-      <input type="text" id="school_name" placeholder="مثال: مدرسة النيل الابتدائية" />
-      <div class="emsg" id="e_school_name">اسم المدرسة مطلوب (3 أحرف على الأقل)</div>
+      <select id="school_id" onchange="onSchoolChange()">
+        <option value="">— اختر المدرسة من القائمة —</option>
+      </select>
+      <div class="emsg" id="e_school">يرجى اختيار المدرسة</div>
     </div>
 
+    <!-- طريقة الإدخال -->
     <div class="card">
-      <h2>📚 النتائج الدراسية</h2>
+      <h2>📋 طريقة إدخال البيانات</h2>
+      <div class="tabs">
+        <button class="tab active" onclick="setMode('form')">✏️ تعبئة مباشرة</button>
+        <button class="tab" onclick="setMode('upload')">📂 رفع ملف Excel</button>
+      </div>
 
-      <div class="grade-sec">
-        <span class="grade-tag">📖 الصف الأول</span>
-        <div class="grid3">
-          <div><div class="col-hd">إجمالي الطلاب</div><input type="number" id="g1_total" min="0" placeholder="0"><div class="emsg" id="e_g1_total"></div></div>
-          <div><div class="col-hd">الناجحون</div><input type="number" id="g1_passed" min="0" placeholder="0"><div class="emsg" id="e_g1_passed"></div></div>
-          <div><div class="col-hd">برنامج علاجي</div><input type="number" id="g1_remedial" min="0" placeholder="0"><div class="emsg" id="e_g1_remedial"></div></div>
+      <!-- وضع الفورم -->
+      <div id="mode-form">
+        <div class="grade-sec">
+          <span class="grade-tag">📖 الصف الأول</span>
+          <div class="grid3">
+            <div><div class="col-hd">إجمالي الطلاب</div><input type="number" id="g1_total" min="0" placeholder="0"><div class="emsg" id="e_g1_total"></div></div>
+            <div><div class="col-hd">الناجحون</div><input type="number" id="g1_passed" min="0" placeholder="0"><div class="emsg" id="e_g1_passed"></div></div>
+            <div><div class="col-hd">برنامج علاجي</div><input type="number" id="g1_remedial" min="0" placeholder="0"><div class="emsg" id="e_g1_remedial"></div></div>
+          </div>
+        </div>
+        <div class="grade-sec">
+          <span class="grade-tag">📗 الصف الثاني</span>
+          <div class="grid3">
+            <div><div class="col-hd">إجمالي الطلاب</div><input type="number" id="g2_total" min="0" placeholder="0"><div class="emsg" id="e_g2_total"></div></div>
+            <div><div class="col-hd">الناجحون</div><input type="number" id="g2_passed" min="0" placeholder="0"><div class="emsg" id="e_g2_passed"></div></div>
+            <div><div class="col-hd">برنامج علاجي</div><input type="number" id="g2_remedial" min="0" placeholder="0"><div class="emsg" id="e_g2_remedial"></div></div>
+          </div>
         </div>
       </div>
 
-      <div class="grade-sec">
-        <span class="grade-tag">📗 الصف الثاني</span>
-        <div class="grid3">
-          <div><div class="col-hd">إجمالي الطلاب</div><input type="number" id="g2_total" min="0" placeholder="0"><div class="emsg" id="e_g2_total"></div></div>
-          <div><div class="col-hd">الناجحون</div><input type="number" id="g2_passed" min="0" placeholder="0"><div class="emsg" id="e_g2_passed"></div></div>
-          <div><div class="col-hd">برنامج علاجي</div><input type="number" id="g2_remedial" min="0" placeholder="0"><div class="emsg" id="e_g2_remedial"></div></div>
+      <!-- وضع رفع الملف -->
+      <div id="mode-upload" style="display:none">
+        <div style="display:flex;justify-content:flex-end;margin-bottom:.9rem">
+          <a class="dl-btn" href="template.xlsx" download>⬇ تحميل نموذج Excel الفارغ</a>
+        </div>
+        <div class="upload-zone" id="dropzone" onclick="document.getElementById('file-input').click()"
+             ondragover="event.preventDefault();this.classList.add('drag')"
+             ondragleave="this.classList.remove('drag')"
+             ondrop="handleDrop(event)">
+          <input type="file" id="file-input" accept=".xlsx,.xls" onchange="handleFile(this.files[0])">
+          <div class="uz-icon">📊</div>
+          <p>اضغط لاختيار الملف أو اسحبه هنا</p>
+          <small>ملفات Excel فقط (.xlsx / .xls)</small>
+        </div>
+        <div class="parsed-badge" id="parsed-badge">
+          <span>✅</span><span id="parsed-msg"></span>
         </div>
       </div>
     </div>
 
-    <button class="btn" id="sbtn" onclick="submit()">
+    <button class="btn" id="sbtn" onclick="submitForm()">
       <span class="spin" id="spin"></span>
       <span id="btxt">📤 إرسال البيانات</span>
     </button>
     <div class="alink"><a href="admin.html">🔐 لوحة الإدارة</a></div>
   </div>
 
+  <!-- شاشة النجاح -->
   <div id="ok" class="card">
     <div class="ok-icon">✅</div>
     <h2>تم الإرسال بنجاح!</h2>
-    <p id="ok-msg"></p>
-    <button class="btn-new" onclick="reset()">➕ إضافة مدرسة أخرى</button>
+    <p id="ok-msg" style="color:var(--muted);font-size:.9rem"></p>
+    <button class="btn-new" onclick="resetForm()">➕ إضافة مدرسة أخرى</button>
   </div>
 </div>
 
 <script>
-// ← ضع هنا رابط الـ Apps Script بعد نشره
 var SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby6t3Khu9_NDYrO4qNkpkcsu__Oizd3LXrSr4gfWwWr5nibBh_4vzQo430icz-AgvhYfg/exec';
+var schools = [];
+var submitted = [];   // أسماء المدارس اللي رفعت بالفعل
+var currentMode = 'form';
+var parsedFromFile = false;
 
-var ids = ['school_name','g1_total','g1_passed','g1_remedial','g2_total','g2_passed','g2_remedial'];
+// -------------------------------------------------------
+// تحميل قائمة المدارس + المدارس التي أرسلت بالفعل
+// -------------------------------------------------------
+async function init() {
+  // تحميل قائمة المدارس من schools.json
+  var r = await fetch('schools.json');
+  schools = await r.json();
 
+  // تحميل المدارس المرسلة من الـ Apps Script
+  try {
+    var r2 = await fetch(SCRIPT_URL + '?action=submitted');
+    var j = await r2.json();
+    submitted = j.submitted || [];
+  } catch(e) { submitted = []; }
+
+  buildDropdown();
+}
+
+function buildDropdown() {
+  var sel = document.getElementById('school_id');
+  sel.innerHTML = '<option value="">— اختر المدرسة من القائمة —</option>';
+  schools.forEach(function(s) {
+    var already = submitted.includes(s.id);
+    var opt = document.createElement('option');
+    opt.value = s.id;
+    // مدارس رفعت بالفعل تظهر مع علامة ✓ وتكون disabled
+    opt.textContent = (already ? '✓ ' : '') + s.name + ' (' + s.type + ')';
+    opt.disabled = already;
+    if (already) opt.style.color = '#aaa';
+    sel.appendChild(opt);
+  });
+}
+
+function onSchoolChange() {
+  var id = document.getElementById('school_id').value;
+  document.getElementById('e_school').classList.remove('on');
+  document.getElementById('school_id').classList.remove('err');
+  document.getElementById('dup-warn').classList.remove('on');
+}
+
+// -------------------------------------------------------
+// تبديل وضع الإدخال
+// -------------------------------------------------------
+function setMode(mode) {
+  currentMode = mode;
+  document.querySelectorAll('.tab').forEach(function(t,i){ t.classList.toggle('active', (i===0&&mode==='form')||(i===1&&mode==='upload')); });
+  document.getElementById('mode-form').style.display = mode==='form' ? 'block' : 'none';
+  document.getElementById('mode-upload').style.display = mode==='upload' ? 'block' : 'none';
+  if (mode === 'form') parsedFromFile = false;
+}
+
+// -------------------------------------------------------
+// قراءة ملف Excel
+// -------------------------------------------------------
+function handleDrop(e) {
+  e.preventDefault();
+  document.getElementById('dropzone').classList.remove('drag');
+  var file = e.dataTransfer.files[0];
+  if (file) handleFile(file);
+}
+
+function handleFile(file) {
+  if (!file) return;
+  var ext = file.name.split('.').pop().toLowerCase();
+  if (!['xlsx','xls'].includes(ext)) {
+    showGlobalErr('الملف يجب أن يكون بصيغة Excel (.xlsx أو .xls)');
+    return;
+  }
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      var wb = XLSX.read(e.target.result, { type: 'array' });
+      var ws = wb.Sheets[wb.SheetNames[0]];
+      var data = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+
+      // قراءة البيانات من الصف السابع (index 6)
+      // التنسيق: A=م، B=اسم، C=g1_total، D=g1_passed، E=g1_remedial، F=g2_total، G=g2_passed، H=g2_remedial
+      var row = data[6];
+      if (!row || row.length < 8) throw new Error('تنسيق الملف غير مطابق للنموذج');
+
+      var vals = {
+        g1_total: parseInt(row[2]) || 0,
+        g1_passed: parseInt(row[3]) || 0,
+        g1_remedial: parseInt(row[4]) || 0,
+        g2_total: parseInt(row[5]) || 0,
+        g2_passed: parseInt(row[6]) || 0,
+        g2_remedial: parseInt(row[7]) || 0
+      };
+
+      // ملء حقول الفورم بالبيانات المقروءة
+      Object.keys(vals).forEach(function(k) {
+        document.getElementById(k).value = vals[k];
+      });
+
+      parsedFromFile = true;
+      var badge = document.getElementById('parsed-badge');
+      document.getElementById('parsed-msg').textContent = 'تم قراءة الملف بنجاح — راجع الأرقام وأرسل';
+      badge.classList.add('on');
+      document.getElementById('gerr').classList.remove('on');
+
+    } catch(err) {
+      showGlobalErr('❌ خطأ في قراءة الملف: ' + err.message + ' — تأكد إنك استخدمت النموذج الأصلي.');
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+// -------------------------------------------------------
+// التحقق من البيانات
+// -------------------------------------------------------
+var fields = ['g1_total','g1_passed','g1_remedial','g2_total','g2_passed','g2_remedial'];
+
+function n(id){ return parseInt(document.getElementById(id).value)||0; }
 function v(id){ return document.getElementById(id).value.trim(); }
-function n(id){ return parseInt(v(id))||0; }
-function setErr(id,msg){ var e=document.getElementById('e_'+id); e.textContent=msg; e.classList.add('on'); document.getElementById(id).classList.add('err'); }
+function setErr(id,msg){ document.getElementById('e_'+id).textContent=msg; document.getElementById('e_'+id).classList.add('on'); document.getElementById(id).classList.add('err'); }
 function clrErr(id){ document.getElementById('e_'+id).classList.remove('on'); document.getElementById(id).classList.remove('err'); }
+function showGlobalErr(msg){ document.getElementById('gerr-msg').textContent=msg; document.getElementById('gerr').classList.add('on'); }
 
-function validate(){
-  ids.forEach(clrErr);
+function validate() {
+  fields.forEach(clrErr);
+  clrErr('school'); document.getElementById('school_id').classList.remove('err');
   document.getElementById('gerr').classList.remove('on');
-  var ok=true;
-  if(v('school_name').length<3){ setErr('school_name','اسم المدرسة مطلوب (3 أحرف على الأقل)'); ok=false; }
-  ['g1','g2'].forEach(function(g){
-    if(v(g+'_total')===''){setErr(g+'_total','مطلوب');ok=false;}
-    if(v(g+'_passed')===''){setErr(g+'_passed','مطلوب');ok=false;}
-    if(v(g+'_remedial')===''){setErr(g+'_remedial','مطلوب');ok=false;}
-    if(n(g+'_passed')>n(g+'_total')){setErr(g+'_passed','يتجاوز الإجمالي');ok=false;}
-    if(n(g+'_remedial')>n(g+'_total')){setErr(g+'_remedial','يتجاوز الإجمالي');ok=false;}
-    if((n(g+'_passed')+n(g+'_remedial'))>n(g+'_total')){setErr(g+'_remedial','مجموع الناجحين + العلاجي يتجاوز الإجمالي');ok=false;}
+  document.getElementById('dup-warn').classList.remove('on');
+  var ok = true;
+
+  if (!v('school_id')) { setErr('school','يرجى اختيار المدرسة'); ok=false; }
+
+  ['g1','g2'].forEach(function(g) {
+    if (v(g+'_total')==='') { setErr(g+'_total','مطلوب'); ok=false; }
+    if (v(g+'_passed')==='') { setErr(g+'_passed','مطلوب'); ok=false; }
+    if (v(g+'_remedial')==='') { setErr(g+'_remedial','مطلوب'); ok=false; }
+    if (n(g+'_passed') > n(g+'_total')) { setErr(g+'_passed','يتجاوز الإجمالي'); ok=false; }
+    if (n(g+'_remedial') > n(g+'_total')) { setErr(g+'_remedial','يتجاوز الإجمالي'); ok=false; }
+    if ((n(g+'_passed')+n(g+'_remedial')) > n(g+'_total')) { setErr(g+'_remedial','مجموع الناجحين + العلاجي يتجاوز الإجمالي'); ok=false; }
   });
   return ok;
 }
 
-async function submit(){
-  if(!validate()) return;
-  var btn=document.getElementById('sbtn'),spin=document.getElementById('spin'),btxt=document.getElementById('btxt');
+// -------------------------------------------------------
+// الإرسال
+// -------------------------------------------------------
+async function submitForm() {
+  if (!validate()) return;
+  var schoolId = v('school_id');
+  var schoolObj = schools.find(function(s){ return s.id===schoolId; });
+  var btn=document.getElementById('sbtn'), spin=document.getElementById('spin'), btxt=document.getElementById('btxt');
   btn.disabled=true; spin.style.display='inline-block'; btxt.textContent='جارٍ الإرسال...';
-  var payload={ school_name:v('school_name'), g1_total:n('g1_total'), g1_passed:n('g1_passed'), g1_remedial:n('g1_remedial'), g2_total:n('g2_total'), g2_passed:n('g2_passed'), g2_remedial:n('g2_remedial') };
-  try{
-    // نرسل البيانات للـ Apps Script كـ JSON
-    var res=await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify(payload)});
-    var json=await res.json();
-    if(json.success){
-      document.getElementById('ok-msg').textContent='تم تسجيل بيانات "'+payload.school_name+'" بنجاح';
+
+  var payload = {
+    school_id: schoolObj.id,
+    school_name: schoolObj.name,
+    school_type: schoolObj.type,
+    g1_total: n('g1_total'), g1_passed: n('g1_passed'), g1_remedial: n('g1_remedial'),
+    g2_total: n('g2_total'), g2_passed: n('g2_passed'), g2_remedial: n('g2_remedial')
+  };
+
+  try {
+    var res = await fetch(SCRIPT_URL, { method:'POST', body:JSON.stringify(payload) });
+    var json = await res.json();
+
+    if (json.success) {
+      document.getElementById('ok-msg').textContent = 'تم تسجيل بيانات "'+schoolObj.name+'" بنجاح';
       document.getElementById('fw').classList.add('gone');
       document.getElementById('ok').classList.add('on');
-    } else { throw new Error(json.error||'خطأ غير معروف'); }
-  } catch(err){
-    document.getElementById('gerr-msg').textContent='حدث خطأ: '+err.message+'. حاول مرة أخرى.';
-    document.getElementById('gerr').classList.add('on');
+    } else if (json.duplicate) {
+      // المدرسة رفعت بالفعل
+      document.getElementById('dup-msg').textContent = '⚠️ مدرسة "'+schoolObj.name+'" قامت برفع بياناتها من قبل. للتعديل تواصل مع الإدارة.';
+      document.getElementById('dup-warn').classList.add('on');
+      btn.disabled=false; spin.style.display='none'; btxt.textContent='📤 إرسال البيانات';
+      // تحديث الـ dropdown
+      submitted.push(schoolId);
+      buildDropdown();
+    } else {
+      throw new Error(json.error||'خطأ غير معروف');
+    }
+  } catch(err) {
+    showGlobalErr('حدث خطأ أثناء الإرسال: '+err.message);
     btn.disabled=false; spin.style.display='none'; btxt.textContent='📤 إرسال البيانات';
   }
 }
 
-function reset(){
-  ids.forEach(function(id){ document.getElementById(id).value=''; clrErr(id); });
+// -------------------------------------------------------
+// إعادة الضبط
+// -------------------------------------------------------
+function resetForm() {
+  fields.forEach(function(id){ document.getElementById(id).value=''; clrErr(id); });
+  clrErr('school');
+  document.getElementById('school_id').value='';
   document.getElementById('ok').classList.remove('on');
   document.getElementById('fw').classList.remove('gone');
-  document.getElementById('gerr').classList.remove('on');
   document.getElementById('sbtn').disabled=false;
   document.getElementById('spin').style.display='none';
   document.getElementById('btxt').textContent='📤 إرسال البيانات';
+  document.getElementById('gerr').classList.remove('on');
+  document.getElementById('dup-warn').classList.remove('on');
+  document.getElementById('parsed-badge').classList.remove('on');
+  parsedFromFile=false;
+  setMode('form');
+  // تحديث الـ dropdown بالمدارس المرسلة الجديدة
+  buildDropdown();
 }
+
+init();
 </script>
 </body>
 </html>
