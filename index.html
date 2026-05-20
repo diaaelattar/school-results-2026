@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>بوابة رفع نتائج المدارس 2026</title>
+<style>
+  :root {
+    --green:#1D9E75;--green-light:#E1F5EE;--green-dark:#0F6E56;
+    --red:#E24B4A;--red-light:#FCEBEB;
+    --gray:#F1EFE8;--border:#D3D1C7;
+    --text:#2C2C2A;--muted:#5F5E5A;--white:#fff;
+    --shadow:0 2px 12px rgba(0,0,0,0.08);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Segoe UI','Cairo',Tahoma,Arial,sans-serif;background:linear-gradient(135deg,#E1F5EE,#f8faf8);min-height:100vh;padding:2rem 1rem;color:var(--text)}
+  .wrap{max-width:660px;margin:0 auto}
+  .header{text-align:center;background:var(--white);border-radius:16px;padding:2rem;margin-bottom:1.5rem;box-shadow:var(--shadow);border-top:5px solid var(--green)}
+  .header .icon{font-size:3rem;margin-bottom:.5rem}
+  .header h1{font-size:1.55rem;color:var(--green-dark);margin-bottom:.4rem}
+  .header p{color:var(--muted);font-size:.9rem}
+  .card{background:var(--white);border-radius:12px;padding:1.4rem 1.6rem;margin-bottom:1.2rem;box-shadow:var(--shadow);border:1px solid var(--border)}
+  .card h2{font-size:1rem;color:var(--green-dark);border-bottom:1px solid var(--gray);padding-bottom:.7rem;margin-bottom:1rem}
+  label{display:block;font-size:.85rem;font-weight:600;margin-bottom:.4rem}
+  input[type=text],input[type=number]{width:100%;padding:10px 13px;border:1.5px solid var(--border);border-radius:8px;font-size:1rem;font-family:inherit;transition:border .2s;text-align:center;direction:rtl}
+  input[type=text]{text-align:right}
+  input:focus{outline:none;border-color:var(--green);box-shadow:0 0 0 3px rgba(29,158,117,.12)}
+  input.err{border-color:var(--red)!important}
+  .emsg{color:var(--red);font-size:.78rem;margin-top:.3rem;display:none}
+  .emsg.on{display:block}
+  .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.9rem}
+  .col-hd{text-align:center;font-size:.78rem;color:var(--muted);background:var(--gray);padding:.35rem;border-radius:6px;margin-bottom:.5rem}
+  .grade-tag{font-size:.82rem;font-weight:700;color:var(--green-dark);background:var(--green-light);padding:.35rem .75rem;border-radius:6px;display:inline-block;margin-bottom:.75rem}
+  .grade-sec{margin-bottom:1.4rem}
+  .grade-sec:last-child{margin-bottom:0}
+  .alert{padding:.9rem 1.1rem;border-radius:8px;margin-bottom:1rem;font-size:.88rem;display:none;align-items:flex-start;gap:.6rem}
+  .alert.on{display:flex}
+  .alert.error{background:var(--red-light);color:#7B1D1D;border:1px solid #F7C1C1}
+  .alert.success{background:var(--green-light);color:var(--green-dark);border:1px solid #9FE1CB}
+  .btn{width:100%;padding:13px;background:var(--green);color:#fff;border:none;border-radius:10px;font-size:1.05rem;font-weight:700;font-family:inherit;cursor:pointer;transition:background .2s,transform .1s}
+  .btn:hover{background:var(--green-dark)}
+  .btn:active{transform:scale(.98)}
+  .btn:disabled{background:#9BADA7;cursor:not-allowed}
+  .spin{display:none;width:16px;height:16px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:sp .65s linear infinite;vertical-align:middle;margin-right:.5rem}
+  @keyframes sp{to{transform:rotate(360deg)}}
+  #ok{display:none;text-align:center;padding:2.5rem 1.5rem}
+  #ok.on{display:block}
+  #fw.gone{display:none}
+  .ok-icon{font-size:4.5rem;margin-bottom:.8rem}
+  #ok h2{font-size:1.4rem;color:var(--green-dark);margin-bottom:.4rem}
+  #ok p{color:var(--muted);font-size:.9rem}
+  .btn-new{margin-top:1.3rem;padding:9px 26px;background:var(--white);color:var(--green);border:2px solid var(--green);border-radius:8px;font-size:.95rem;font-family:inherit;cursor:pointer;font-weight:600;transition:background .2s}
+  .btn-new:hover{background:var(--green-light)}
+  .alink{text-align:center;margin-top:1.2rem}
+  .alink a{color:var(--muted);font-size:.82rem;text-decoration:none}
+  .alink a:hover{color:var(--green)}
+  .req{color:var(--red)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="header">
+    <div class="icon">🏫</div>
+    <h1>بوابة رفع نتائج المدارس 2026</h1>
+    <p>أدخل بيانات مدرستك بدقة ثم اضغط إرسال — تصل البيانات فوراً للإدارة</p>
+  </div>
+
+  <div id="fw">
+    <div id="gerr" class="alert error"><span>⚠️</span><span id="gerr-msg"></span></div>
+
+    <div class="card">
+      <h2>🏫 بيانات المدرسة</h2>
+      <label>اسم المدرسة <span class="req">*</span></label>
+      <input type="text" id="school_name" placeholder="مثال: مدرسة النيل الابتدائية" />
+      <div class="emsg" id="e_school_name">اسم المدرسة مطلوب (3 أحرف على الأقل)</div>
+    </div>
+
+    <div class="card">
+      <h2>📚 النتائج الدراسية</h2>
+
+      <div class="grade-sec">
+        <span class="grade-tag">📖 الصف الأول</span>
+        <div class="grid3">
+          <div><div class="col-hd">إجمالي الطلاب</div><input type="number" id="g1_total" min="0" placeholder="0"><div class="emsg" id="e_g1_total"></div></div>
+          <div><div class="col-hd">الناجحون</div><input type="number" id="g1_passed" min="0" placeholder="0"><div class="emsg" id="e_g1_passed"></div></div>
+          <div><div class="col-hd">برنامج علاجي</div><input type="number" id="g1_remedial" min="0" placeholder="0"><div class="emsg" id="e_g1_remedial"></div></div>
+        </div>
+      </div>
+
+      <div class="grade-sec">
+        <span class="grade-tag">📗 الصف الثاني</span>
+        <div class="grid3">
+          <div><div class="col-hd">إجمالي الطلاب</div><input type="number" id="g2_total" min="0" placeholder="0"><div class="emsg" id="e_g2_total"></div></div>
+          <div><div class="col-hd">الناجحون</div><input type="number" id="g2_passed" min="0" placeholder="0"><div class="emsg" id="e_g2_passed"></div></div>
+          <div><div class="col-hd">برنامج علاجي</div><input type="number" id="g2_remedial" min="0" placeholder="0"><div class="emsg" id="e_g2_remedial"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <button class="btn" id="sbtn" onclick="submit()">
+      <span class="spin" id="spin"></span>
+      <span id="btxt">📤 إرسال البيانات</span>
+    </button>
+    <div class="alink"><a href="admin.html">🔐 لوحة الإدارة</a></div>
+  </div>
+
+  <div id="ok" class="card">
+    <div class="ok-icon">✅</div>
+    <h2>تم الإرسال بنجاح!</h2>
+    <p id="ok-msg"></p>
+    <button class="btn-new" onclick="reset()">➕ إضافة مدرسة أخرى</button>
+  </div>
+</div>
+
+<script>
+// ← ضع هنا رابط الـ Apps Script بعد نشره
+var SCRIPT_URL = 'APPS_SCRIPT_URL_HERE';
+
+var ids = ['school_name','g1_total','g1_passed','g1_remedial','g2_total','g2_passed','g2_remedial'];
+
+function v(id){ return document.getElementById(id).value.trim(); }
+function n(id){ return parseInt(v(id))||0; }
+function setErr(id,msg){ var e=document.getElementById('e_'+id); e.textContent=msg; e.classList.add('on'); document.getElementById(id).classList.add('err'); }
+function clrErr(id){ document.getElementById('e_'+id).classList.remove('on'); document.getElementById(id).classList.remove('err'); }
+
+function validate(){
+  ids.forEach(clrErr);
+  document.getElementById('gerr').classList.remove('on');
+  var ok=true;
+  if(v('school_name').length<3){ setErr('school_name','اسم المدرسة مطلوب (3 أحرف على الأقل)'); ok=false; }
+  ['g1','g2'].forEach(function(g){
+    if(v(g+'_total')===''){setErr(g+'_total','مطلوب');ok=false;}
+    if(v(g+'_passed')===''){setErr(g+'_passed','مطلوب');ok=false;}
+    if(v(g+'_remedial')===''){setErr(g+'_remedial','مطلوب');ok=false;}
+    if(n(g+'_passed')>n(g+'_total')){setErr(g+'_passed','يتجاوز الإجمالي');ok=false;}
+    if(n(g+'_remedial')>n(g+'_total')){setErr(g+'_remedial','يتجاوز الإجمالي');ok=false;}
+    if((n(g+'_passed')+n(g+'_remedial'))>n(g+'_total')){setErr(g+'_remedial','مجموع الناجحين + العلاجي يتجاوز الإجمالي');ok=false;}
+  });
+  return ok;
+}
+
+async function submit(){
+  if(!validate()) return;
+  var btn=document.getElementById('sbtn'),spin=document.getElementById('spin'),btxt=document.getElementById('btxt');
+  btn.disabled=true; spin.style.display='inline-block'; btxt.textContent='جارٍ الإرسال...';
+  var payload={ school_name:v('school_name'), g1_total:n('g1_total'), g1_passed:n('g1_passed'), g1_remedial:n('g1_remedial'), g2_total:n('g2_total'), g2_passed:n('g2_passed'), g2_remedial:n('g2_remedial') };
+  try{
+    // نرسل البيانات للـ Apps Script كـ JSON
+    var res=await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify(payload)});
+    var json=await res.json();
+    if(json.success){
+      document.getElementById('ok-msg').textContent='تم تسجيل بيانات "'+payload.school_name+'" بنجاح';
+      document.getElementById('fw').classList.add('gone');
+      document.getElementById('ok').classList.add('on');
+    } else { throw new Error(json.error||'خطأ غير معروف'); }
+  } catch(err){
+    document.getElementById('gerr-msg').textContent='حدث خطأ: '+err.message+'. حاول مرة أخرى.';
+    document.getElementById('gerr').classList.add('on');
+    btn.disabled=false; spin.style.display='none'; btxt.textContent='📤 إرسال البيانات';
+  }
+}
+
+function reset(){
+  ids.forEach(function(id){ document.getElementById(id).value=''; clrErr(id); });
+  document.getElementById('ok').classList.remove('on');
+  document.getElementById('fw').classList.remove('gone');
+  document.getElementById('gerr').classList.remove('on');
+  document.getElementById('sbtn').disabled=false;
+  document.getElementById('spin').style.display='none';
+  document.getElementById('btxt').textContent='📤 إرسال البيانات';
+}
+</script>
+</body>
+</html>
