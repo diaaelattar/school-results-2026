@@ -4,7 +4,7 @@
 // ============================================================
 
 // معرّف الـ Spreadsheet — ستضعه أنت بعد إنشاء الـ Sheet
-var SPREADSHEET_ID = 'ضع_هنا_معرف_الـ_Sheet';
+var SPREADSHEET_ID = '189_NrjhdDdUjUD53ZuEQtyL7GzOEFJugwx5wrXducdw';
 var SHEET_NAME = 'نتائج المدارس';
 
 // ----------------------------------------------------------------
