@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>استيراد البيانات — الإدارة فقط</title>
+<style>
+  :root{--green:#1D9E75;--green-light:#E1F5EE;--green-dark:#0F6E56;--red:#E24B4A;--red-light:#FCEBEB;--amber:#BA7517;--amber-bg:#FAEEDA;--gray:#F1EFE8;--border:#D3D1C7;--text:#2C2C2A;--muted:#5F5E5A;--white:#fff;--shadow:0 2px 10px rgba(0,0,0,.08)}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Segoe UI','Cairo',Tahoma,sans-serif;background:var(--gray);min-height:100vh;padding:2rem 1rem;color:var(--text);direction:rtl}
+  .wrap{max-width:760px;margin:0 auto}
+  .card{background:var(--white);border-radius:14px;padding:1.6rem;margin-bottom:1.2rem;box-shadow:var(--shadow);border:1px solid var(--border)}
+  h1{font-size:1.4rem;color:var(--green-dark);margin-bottom:.3rem}
+  p.sub{color:var(--muted);font-size:.88rem;margin-bottom:1.3rem}
+  table{width:100%;border-collapse:collapse;font-size:.82rem}
+  th{background:var(--green-dark);color:#fff;padding:8px 10px;text-align:center;font-weight:600}
+  td{padding:7px 10px;text-align:center;border-bottom:1px solid var(--gray)}
+  td.name{text-align:right;font-weight:500}
+  td.status{min-width:90px}
+  .badge{display:inline-block;padding:2px 10px;border-radius:20px;font-size:.75rem;font-weight:600}
+  .badge-wait{background:#f0f0f0;color:#888}
+  .badge-ok{background:var(--green-light);color:var(--green-dark)}
+  .badge-err{background:var(--red-light);color:var(--red)}
+  .badge-dup{background:var(--amber-bg);color:var(--amber)}
+  .badge-busy{background:#EEF;color:#55A}
+  .btn{padding:11px 28px;background:var(--green);color:#fff;border:none;border-radius:9px;font-size:1rem;font-weight:700;font-family:inherit;cursor:pointer;transition:background .2s}
+  .btn:hover{background:var(--green-dark)}
+  .btn:disabled{background:#aaa;cursor:not-allowed}
+  .progress-bar{height:8px;background:#e0e0e0;border-radius:4px;margin:1rem 0;overflow:hidden}
+  .progress-fill{height:100%;background:var(--green);border-radius:4px;transition:width .3s}
+  .summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:.7rem;margin-top:1rem}
+  .stat{background:var(--gray);border-radius:8px;padding:.8rem;text-align:center}
+  .stat .num{font-size:1.6rem;font-weight:700;color:var(--green-dark)}
+  .stat .lbl{font-size:.72rem;color:var(--muted)}
+  a.back{color:var(--muted);font-size:.83rem;text-decoration:none;display:inline-block;margin-top:1rem}
+  a.back:hover{color:var(--green)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card">
+    <h1>📥 استيراد البيانات الموجودة — الإدارة فقط</h1>
+    <p class="sub">هذه الصفحة ترفع بيانات 23 مدرسة تم استخراجها مسبقاً من ملفات Excel إلى Google Sheets تلقائياً. اضغط "ابدأ الاستيراد" ولا تغلق الصفحة حتى ينتهي.</p>
+
+    <div class="summary">
+      <div class="stat"><div class="num" id="cnt-total">23</div><div class="lbl">مدرسة إجمالي</div></div>
+      <div class="stat"><div class="num" id="cnt-ok" style="color:var(--green)">0</div><div class="lbl">تم رفعها</div></div>
+      <div class="stat"><div class="num" id="cnt-dup" style="color:var(--amber)">0</div><div class="lbl">موجودة مسبقاً</div></div>
+      <div class="stat"><div class="num" id="cnt-err" style="color:var(--red)">0</div><div class="lbl">فشل</div></div>
+    </div>
+
+    <div class="progress-bar"><div class="progress-fill" id="prog" style="width:0%"></div></div>
+    <button class="btn" id="startBtn" onclick="startImport()">🚀 ابدأ الاستيراد</button>
+  </div>
+
+  <div class="card">
+    <table>
+      <thead>
+        <tr>
+          <th>#</th><th>المدرسة</th>
+          <th colspan="3">الصف الأول</th>
+          <th colspan="3">الصف الثاني</th>
+          <th>الحالة</th>
+        </tr>
+        <tr>
+          <th></th><th></th>
+          <th>إجمالي</th><th>ناجح</th><th>علاجي</th>
+          <th>إجمالي</th><th>ناجح</th><th>علاجي</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="tbl"></tbody>
+    </table>
+  </div>
+  <a class="back" href="admin.html">← لوحة الإدارة</a>
+</div>
+
+<script>
+var SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby6t3Khu9_NDYrO4qNkpkcsu__Oizd3LXrSr4gfWwWr5nibBh_4vzQo430icz-AgvhYfg/exec';
+
+var SCHOOLS_DATA = [{"school_name": "السيده عائشه ف١", "g1_total": 153, "g1_passed": 129, "g1_remedial": 24, "g2_total": 190, "g2_passed": 155, "g2_remedial": 35}, {"school_name": "براعم مصر للغات", "g1_total": 67, "g1_passed": 67, "g1_remedial": 0, "g2_total": 86, "g2_passed": 85, "g2_remedial": 1}, {"school_name": "حافظ إبراهيم ف2", "g1_total": 192, "g1_passed": 110, "g1_remedial": 82, "g2_total": 210, "g2_passed": 151, "g2_remedial": 59}, {"school_name": "السادات الابتدائية", "g1_total": 187, "g1_passed": 171, "g1_remedial": 16, "g2_total": 179, "g2_passed": 168, "g2_remedial": 11}, {"school_name": "عقبه بن نافع ف1", "g1_total": 357, "g1_passed": 331, "g1_remedial": 26, "g2_total": 315, "g2_passed": 303, "g2_remedial": 12}, {"school_name": "دار السلام الخاصة", "g1_total": 43, "g1_passed": 43, "g1_remedial": 0, "g2_total": 44, "g2_passed": 44, "g2_remedial": 0}, {"school_name": "الاورمان الخاصة لغات", "g1_total": 151, "g1_passed": 151, "g1_remedial": 0, "g2_total": 170, "g2_passed": 170, "g2_remedial": 0}, {"school_name": "اللولي الخاصه", "g1_total": 70, "g1_passed": 70, "g1_remedial": 0, "g2_total": 105, "g2_passed": 105, "g2_remedial": 0}, {"school_name": "الجيل الصالح الخاصة", "g1_total": 97, "g1_passed": 97, "g1_remedial": 0, "g2_total": 74, "g2_passed": 74, "g2_remedial": 0}, {"school_name": "حسام الدين الخاصة", "g1_total": 104, "g1_passed": 104, "g1_remedial": 0, "g2_total": 80, "g2_passed": 80, "g2_remedial": 0}, {"school_name": "المنار الحديثه عربى", "g1_total": 153, "g1_passed": 153, "g1_remedial": 0, "g2_total": 160, "g2_passed": 160, "g2_remedial": 0}, {"school_name": "دار الحنان الخاصه المشتركة لغات", "g1_total": 203, "g1_passed": 203, "g1_remedial": 0, "g2_total": 231, "g2_passed": 229, "g2_remedial": 2}, {"school_name": "يوسف جاد الله الرسمية لغات", "g1_total": 296, "g1_passed": 281, "g1_remedial": 15, "g2_total": 292, "g2_passed": 283, "g2_remedial": 9}, {"school_name": "عقبة بن نافع ف2", "g1_total": 200, "g1_passed": 162, "g1_remedial": 38, "g2_total": 270, "g2_passed": 222, "g2_remedial": 48}, {"school_name": "العروبه الرسميه لغات", "g1_total": 238, "g1_passed": 238, "g1_remedial": 0, "g2_total": 236, "g2_passed": 230, "g2_remedial": 6}, {"school_name": "طلعت حرب الابتدائية ف2", "g1_total": 366, "g1_passed": 322, "g1_remedial": 44, "g2_total": 388, "g2_passed": 343, "g2_remedial": 41}, {"school_name": "الحسينى الخاصة", "g1_total": 46, "g1_passed": 46, "g1_remedial": 0, "g2_total": 37, "g2_passed": 37, "g2_remedial": 0}, {"school_name": "ام القرى الخاصه", "g1_total": 129, "g1_passed": 129, "g1_remedial": 0, "g2_total": 95, "g2_passed": 95, "g2_remedial": 0}, {"school_name": "الفضائل الاسلاميه الخاصه", "g1_total": 166, "g1_passed": 166, "g1_remedial": 0, "g2_total": 139, "g2_passed": 139, "g2_remedial": 0}, {"school_name": "التربية الحديثة للغات", "g1_total": 43, "g1_passed": 43, "g1_remedial": 0, "g2_total": 36, "g2_passed": 36, "g2_remedial": 0}, {"school_name": "الشهيد عبدالمنعم رياض ف2", "g1_total": 201, "g1_passed": 163, "g1_remedial": 38, "g2_total": 188, "g2_passed": 132, "g2_remedial": 56}, {"school_name": "ليسيه الهرم", "g1_total": 15, "g1_passed": 14, "g1_remedial": 1, "g2_total": 10, "g2_passed": 10, "g2_remedial": 0}, {"school_name": "الماسية لغات", "g1_total": 64, "g1_passed": 64, "g1_remedial": 0, "g2_total": 63, "g2_passed": 63, "g2_remedial": 0}];
+
+var ok=0, dup=0, err=0;
+
+function buildTable() {
+  var html = '';
+  SCHOOLS_DATA.forEach(function(r,i) {
+    html += '<tr id="row-'+i+'"><td>'+(i+1)+'</td><td class="name">'+r.school_name+'</td>' +
+      '<td>'+r.g1_total+'</td><td>'+r.g1_passed+'</td><td>'+r.g1_remedial+'</td>' +
+      '<td>'+r.g2_total+'</td><td>'+r.g2_passed+'</td><td>'+r.g2_remedial+'</td>' +
+      '<td class="status"><span class="badge badge-wait" id="st-'+i+'">انتظار</span></td></tr>';
+  });
+  document.getElementById('tbl').innerHTML = html;
+}
+
+function setStatus(i, type, text) {
+  var el = document.getElementById('st-'+i);
+  el.className = 'badge badge-'+type;
+  el.textContent = text;
+}
+
+async function startImport() {
+  document.getElementById('startBtn').disabled = true;
+  document.getElementById('startBtn').textContent = '⏳ جارٍ الاستيراد...';
+
+  for (var i = 0; i < SCHOOLS_DATA.length; i++) {
+    setStatus(i, 'busy', '⏳ يرسل...');
+    var r = SCHOOLS_DATA[i];
+    // تأخير بسيط بين الطلبات لتجنب الضغط على الـ API
+    await new Promise(res => setTimeout(res, 400));
+
+    try {
+      var res = await fetch(SCRIPT_URL, {
+        method: 'POST',
+        body: JSON.stringify({
+          school_id: 'imported_'+i,
+          school_name: r.school_name,
+          school_type: '',
+          g1_total: r.g1_total, g1_passed: r.g1_passed, g1_remedial: r.g1_remedial,
+          g2_total: r.g2_total, g2_passed: r.g2_passed, g2_remedial: r.g2_remedial
+        })
+      });
+      var json = await res.json();
+
+      if (json.success) {
+        setStatus(i, 'ok', '✅ تم');
+        ok++;
+        document.getElementById('cnt-ok').textContent = ok;
+      } else if (json.duplicate) {
+        setStatus(i, 'dup', '↩ موجودة');
+        dup++;
+        document.getElementById('cnt-dup').textContent = dup;
+      } else {
+        setStatus(i, 'err', '❌ خطأ');
+        err++;
+        document.getElementById('cnt-err').textContent = err;
+      }
+    } catch(e) {
+      setStatus(i, 'err', '❌ فشل');
+      err++;
+      document.getElementById('cnt-err').textContent = err;
+    }
+
+    document.getElementById('prog').style.width = Math.round((i+1)/SCHOOLS_DATA.length*100)+'%';
+  }
+
+  document.getElementById('startBtn').textContent = '✅ انتهى الاستيراد — '+ok+' مدرسة تم رفعها';
+}
+
+buildTable();
+</script>
+</body>
+</html>

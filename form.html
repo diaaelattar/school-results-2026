@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>إدخال البيانات — بوابة المدارس 2026</title>
+<style>
+:root{
+  --g:#1D9E75;--gl:#E1F5EE;--gd:#0F6E56;
+  --red:#E24B4A;--rl:#FCEBEB;
+  --amb:#BA7517;--aml:#FAEEDA;
+  --blue:#1565C0;--bl:#E3F2FD;
+  --pink:#C2185B;--pl:#FCE4EC;
+  --border:#D3D1C7;--text:#2C2C2A;--muted:#5F5E5A;
+  --white:#fff;--gray:#F5F5F2;
+  --shadow:0 2px 10px rgba(0,0,0,.07);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI','Cairo',Tahoma,sans-serif;background:var(--gray);min-height:100vh;color:var(--text);direction:rtl}
+
+/* topbar */
+.topbar{background:var(--gd);color:#fff;padding:.7rem 1.2rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,.2)}
+.topbar .school-info{display:flex;align-items:center;gap:.7rem}
+.topbar h2{font-size:.95rem;font-weight:600}
+.topbar .type-badge{background:rgba(255,255,255,.15);padding:3px 10px;border-radius:20px;font-size:.75rem}
+.topbar .actions{display:flex;gap:.5rem}
+.top-btn{padding:5px 12px;border-radius:6px;font-size:.78rem;font-family:inherit;cursor:pointer;font-weight:600;border:none;transition:all .2s}
+.top-btn.outline{background:transparent;color:#9FE1CB;border:1px solid #9FE1CB}
+.top-btn.outline:hover{background:rgba(255,255,255,.1)}
+.top-btn.danger{background:rgba(226,75,74,.2);color:#FFAAAA;border:1px solid rgba(226,75,74,.4)}
+.top-btn.danger:hover{background:rgba(226,75,74,.35)}
+
+.main{max-width:900px;margin:0 auto;padding:1.2rem 1rem 3rem}
+
+/* status banner */
+.banner{padding:1rem 1.2rem;border-radius:10px;margin-bottom:1.2rem;display:none;align-items:flex-start;gap:.7rem;font-size:.9rem}
+.banner.on{display:flex}
+.banner.exists{background:var(--aml);color:#7F4900;border:1px solid #FAC775}
+.banner.success{background:var(--gl);color:var(--gd);border:1px solid #9FE1CB}
+.banner.error{background:var(--rl);color:#7B1D1D;border:1px solid #F7C1C1}
+.banner.locked{background:var(--bl);color:var(--blue);border:1px solid #90CAF9}
+
+/* grade tabs */
+.grade-tabs{display:flex;background:#E0E0E0;border-radius:10px;padding:4px;margin-bottom:1.2rem;gap:4px}
+.grade-tab{flex:1;padding:10px;text-align:center;border:none;background:transparent;border-radius:8px;cursor:pointer;font-size:.95rem;font-family:inherit;font-weight:600;color:var(--muted);transition:all .2s}
+.grade-tab.active{background:var(--white);color:var(--gd);box-shadow:0 1px 5px rgba(0,0,0,.1)}
+
+/* form tab within grade */
+.form-tabs{display:flex;gap:.5rem;margin-bottom:1rem;border-bottom:2px solid var(--border)}
+.form-tab{padding:8px 18px;border:none;background:none;font-family:inherit;font-size:.88rem;font-weight:600;color:var(--muted);cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;transition:all .2s}
+.form-tab.active{color:var(--gd);border-bottom-color:var(--g)}
+
+/* cards */
+.card{background:var(--white);border-radius:12px;padding:1.2rem 1.4rem;margin-bottom:1rem;box-shadow:var(--shadow);border:1px solid var(--border)}
+.card-title{font-size:.92rem;font-weight:700;color:var(--gd);margin-bottom:1rem;padding-bottom:.6rem;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:.5rem}
+.section-title{font-size:.83rem;font-weight:700;background:var(--gl);color:var(--gd);padding:.4rem .8rem;border-radius:6px;margin-bottom:.8rem;display:inline-block}
+
+/* table-like input grid */
+.tgrid{width:100%;border-collapse:collapse;margin-bottom:.8rem}
+.tgrid th{font-size:.78rem;font-weight:600;padding:.5rem .6rem;text-align:center;border:1px solid var(--border)}
+.tgrid th.blue{background:var(--bl);color:var(--blue)}
+.tgrid th.pink{background:var(--pl);color:var(--pink)}
+.tgrid th.green{background:var(--gl);color:var(--gd)}
+.tgrid th.gray{background:var(--gray);color:var(--muted)}
+.tgrid td{padding:.35rem .4rem;border:1px solid var(--border);text-align:center;vertical-align:middle}
+.tgrid td.row-label{text-align:right;font-size:.83rem;font-weight:600;padding:.5rem .8rem;background:var(--gray);min-width:160px}
+.tgrid input[type=number]{width:100%;padding:6px 4px;border:1.5px solid var(--border);border-radius:6px;font-size:.92rem;text-align:center;font-family:inherit;background:var(--white);transition:border .15s}
+.tgrid input[type=number]:focus{outline:none;border-color:var(--g);box-shadow:0 0 0 2px rgba(29,158,117,.1)}
+.tgrid input.err{border-color:var(--red)!important;background:var(--rl)}
+.tgrid .total{background:var(--gl);font-weight:700;color:var(--gd);font-size:.9rem}
+
+/* submit area */
+.submit-area{display:flex;gap:.8rem;flex-wrap:wrap;margin-top:1.2rem}
+.btn{padding:12px 28px;border:none;border-radius:9px;font-size:.95rem;font-weight:700;font-family:inherit;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:.5rem}
+.btn-submit{background:var(--g);color:#fff;flex:1}
+.btn-submit:hover{background:var(--gd)}
+.btn-submit:disabled{background:#aaa;cursor:not-allowed}
+.btn-edit{background:var(--aml);color:var(--amb);border:1px solid #FAC775}
+.btn-edit:hover{background:#FAC775}
+.spin{width:16px;height:16px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:sp .65s linear infinite;display:none}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+/* change password modal */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:999;display:none;align-items:center;justify-content:center}
+.modal-bg.on{display:flex}
+.modal{background:var(--white);border-radius:14px;padding:1.8rem;width:380px;max-width:95%;box-shadow:0 8px 30px rgba(0,0,0,.15)}
+.modal h3{font-size:1.05rem;color:var(--gd);margin-bottom:1.2rem}
+.modal label{display:block;font-size:.83rem;font-weight:600;margin-bottom:.35rem;margin-top:.8rem}
+.modal input{width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:.93rem;font-family:inherit}
+.modal input:focus{outline:none;border-color:var(--g)}
+.modal .err-msg{color:var(--red);font-size:.78rem;margin-top:.3rem;display:none}
+.modal .err-msg.on{display:block}
+.modal-btns{display:flex;gap:.6rem;margin-top:1.2rem}
+.modal-btns button{flex:1;padding:9px;border-radius:8px;cursor:pointer;font-family:inherit;font-size:.9rem;font-weight:600;border:none}
+.btn-confirm{background:var(--g);color:#fff}
+.btn-cancel{background:var(--gray);color:var(--text)}
+
+/* loading */
+#loading{text-align:center;padding:3rem;color:var(--muted)}
+</style>
+</head>
+<body>
+
+<!-- Topbar -->
+<div class="topbar">
+  <div class="school-info">
+    <span style="font-size:1.4rem">🏫</span>
+    <div>
+      <h2 id="school-name-top">جارٍ التحميل…</h2>
+      <span class="type-badge" id="school-type-top"></span>
+    </div>
+  </div>
+  <div class="actions">
+    <button class="top-btn outline" onclick="showChangePwd()">🔑 تغيير كلمة المرور</button>
+    <button class="top-btn danger" onclick="logout()">خروج ↩</button>
+  </div>
+</div>
+
+<div class="main">
+  <div id="loading">⏳ جارٍ تحميل بيانات المدرسة…</div>
+
+  <div id="content" style="display:none">
+    <!-- Status Banners -->
+    <div id="b-exists" class="banner exists">
+      <span style="font-size:1.3rem">📋</span>
+      <div>
+        <strong>تم التسجيل مسبقاً.</strong> يمكنك مراجعة البيانات وتعديلها ثم الحفظ.
+      </div>
+    </div>
+    <div id="b-success" class="banner success"><span>✅</span><span id="b-success-msg"></span></div>
+    <div id="b-error"   class="banner error"><span>⚠️</span><span id="b-error-msg"></span></div>
+    <div id="b-locked"  class="banner locked"><span>🔄</span><span id="b-locked-msg">جارٍ إعادة المحاولة تلقائياً…</span></div>
+
+    <!-- Grade Tabs -->
+    <div class="grade-tabs">
+      <button class="grade-tab active" onclick="setGrade(1)">📖 الصف الأول</button>
+      <button class="grade-tab"        onclick="setGrade(2)">📗 الصف الثاني</button>
+    </div>
+
+    <!-- Grade Panels -->
+    <div id="grade-1-panel"> </div>
+    <div id="grade-2-panel" style="display:none"> </div>
+
+    <!-- Submit -->
+    <div class="submit-area">
+      <button class="btn btn-submit" id="submitBtn" onclick="saveData()">
+        <span class="spin" id="spin"></span>
+        <span id="btxt">📤 حفظ البيانات</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Change Password Modal -->
+<div class="modal-bg" id="pwd-modal">
+  <div class="modal">
+    <h3>🔑 تغيير كلمة المرور</h3>
+    <label>كلمة المرور الحالية</label>
+    <input type="password" id="old-pwd" placeholder="كلمة المرور الحالية" />
+    <label>كلمة المرور الجديدة</label>
+    <input type="password" id="new-pwd" placeholder="كلمة مرور جديدة (6 أحرف على الأقل)" />
+    <label>تأكيد كلمة المرور الجديدة</label>
+    <input type="password" id="confirm-pwd" placeholder="أعد كتابة كلمة المرور" />
+    <div class="err-msg" id="pwd-err"></div>
+    <div class="modal-btns">
+      <button class="btn-confirm" onclick="changePassword()">✅ تغيير</button>
+      <button class="btn-cancel"  onclick="closePwdModal()">إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<script>
+var SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby6t3Khu9_NDYrO4qNkpkcsu__Oizd3LXrSr4gfWwWr5nibBh_4vzQo430icz-AgvhYfg/exec';
+
+// ---- Session ----
+var SID  = sessionStorage.getItem('school_id');
+var SNAME= sessionStorage.getItem('school_name');
+var STYPE= sessionStorage.getItem('school_type');
+var SPWD = sessionStorage.getItem('password');
+if (!SID) { window.location.href = 'index.html'; }
+
+var existingData = null;  // بيانات موجودة مسبقاً
+var currentGrade = 1;
+var isEdit = false;
+
+// ---- تعريف حقول الاستمارة ----
+var F1_ROWS = [
+  { key:'enrolled',  label:'عدد التلاميذ المقيدين' },
+  { key:'pct60',     label:'الحاضرين بنسبة 60%' },
+];
+var F1_INIT = [
+  { key:'init_pres', label:'المبدئي — الحاضرون' },
+  { key:'init_pass', label:'المبدئي — اجتازوا' },
+  { key:'init_fail', label:'المبدئي — لم يجتازوا' },
+  { key:'init_abs',  label:'المبدئي — الغائب' },
+];
+var F1_FIN = [
+  { key:'fin_pres',  label:'النهائي — الحاضرون' },
+  { key:'fin_pass',  label:'النهائي — اجتازوا' },
+  { key:'fin_fail',  label:'النهائي — لم يجتازوا' },
+  { key:'fin_abs',   label:'النهائي — الغائب' },
+];
+var F2_SUBJ = [
+  { key:'rel',  label:'التربية الدينية' },
+  { key:'ara',  label:'اللغة العربية' },
+  { key:'eng',  label:'اللغة الإنجليزية' },
+  { key:'math', label:'الرياضيات' },
+];
+
+// ---- بناء الـ HTML للصف الدراسي ----
+function buildGradeHTML(g) {
+  var p = 'g'+g+'_';
+
+  function inp(key) {
+    return '<input type="number" id="'+p+key+'" min="0" value="0" oninput="calcTotals(\''+g+'\')" />';
+  }
+  function tot(key) {
+    return '<td class="total" id="'+p+key+'_tot">0</td>';
+  }
+
+  // --- استمارة 1 ---
+  var s1 = '<div class="card">';
+  s1 += '<div class="card-title">📋 الاستمارة رقم (1) — البيانات الرئيسية</div>';
+
+  // header
+  s1 += '<table class="tgrid"><thead><tr>';
+  s1 += '<th class="gray" rowspan="2" style="width:160px">البيان</th>';
+  s1 += '<th class="blue" colspan="2">بنون</th>';
+  s1 += '<th class="pink" colspan="2">بنات</th>';  // نفس البنون لكن مخصص للبنات
+  s1 += '<th class="green" colspan="1">الجملة</th>';
+  s1 += '</tr><tr>';
+  // بنون headers
+  s1 += '<th class="blue" colspan="2">عدد</th>';
+  // بنات headers  
+  s1 += '<th class="pink" colspan="2">عدد</th>';
+  s1 += '<th class="green">إجمالي</th>';
+  s1 += '</tr>';
+  // sub-headers
+  s1 += '<tr>';
+  s1 += '<th class="gray"></th>';
+  s1 += '<th class="blue">بنون</th><th class="blue" style="display:none"></th>';
+  s1 += '<th class="pink">بنات</th><th class="pink" style="display:none"></th>';
+  s1 += '<th class="green">جملة</th>';
+  s1 += '</tr>';
+  s1 += '</thead><tbody>';
+
+  // إعادة بناء header بشكل أبسط وأصح
+  s1 = '<div class="card"><div class="card-title">📋 الاستمارة رقم (1) — البيانات الرئيسية</div>';
+  s1 += '<table class="tgrid"><thead><tr>';
+  s1 += '<th class="gray">البيان</th>';
+  s1 += '<th class="blue">بنون</th><th class="pink">بنات</th><th class="green">جملة</th>';
+  s1 += '</tr></thead><tbody>';
+
+  var allF1 = F1_ROWS.concat(F1_INIT).concat(F1_FIN);
+  allF1.forEach(function(row, i) {
+    // فاصل بصري
+    var extra = '';
+    if (row.key === 'init_pres') extra = '<tr><td colspan="4"><div class="section-title">🔵 التقييم المبدئي</div></td></tr>';
+    if (row.key === 'fin_pres')  extra = '<tr><td colspan="4"><div class="section-title">🟢 التقييم النهائي</div></td></tr>';
+    s1 += extra;
+    s1 += '<tr>';
+    s1 += '<td class="row-label">'+row.label+'</td>';
+    s1 += '<td>'+inp(row.key+'_m')+'</td>';
+    s1 += '<td>'+inp(row.key+'_f')+'</td>';
+    s1 += tot(row.key);
+    s1 += '</tr>';
+  });
+
+  s1 += '</tbody></table></div>';
+
+  // --- استمارة 2 ---
+  var s2 = '<div class="card" id="s2-'+g+'"><div class="card-title">📚 الاستمارة رقم (2) — أداء المواد الدراسية</div>';
+  s2 += '<table class="tgrid"><thead><tr>';
+  s2 += '<th class="gray">المادة</th>';
+  s2 += '<th class="blue">الحاضرون</th><th class="green">اجتازوا</th><th class="red" style="background:#FCEBEB;color:#E24B4A">لم يجتازوا</th>';
+  s2 += '</tr></thead><tbody>';
+
+  F2_SUBJ.forEach(function(subj) {
+    s2 += '<tr>';
+    s2 += '<td class="row-label">'+subj.label+'</td>';
+    s2 += '<td>'+inp(subj.key+'_pres')+'</td>';
+    s2 += '<td>'+inp(subj.key+'_pass')+'</td>';
+    s2 += '<td>'+inp(subj.key+'_fail')+'</td>';
+    s2 += '</tr>';
+  });
+
+  s2 += '</tbody></table></div>';
+
+  // form sub-tabs
+  return '<div class="form-tabs"><button class="form-tab active" id="ft1-'+g+'" onclick="setFormTab('+g+',1)">استمارة 1</button><button class="form-tab" id="ft2-'+g+'" onclick="setFormTab('+g+',2)">استمارة 2</button></div>' +
+         '<div id="s1-panel-'+g+'">'+s1+'</div>' +
+         '<div id="s2-panel-'+g+'" style="display:none">'+s2+'</div>';
+}
+
+function setFormTab(g, t) {
+  document.getElementById('ft1-'+g).classList.toggle('active', t===1);
+  document.getElementById('ft2-'+g).classList.toggle('active', t===2);
+  document.getElementById('s1-panel-'+g).style.display = t===1 ? 'block' : 'none';
+  document.getElementById('s2-panel-'+g).style.display = t===2 ? 'block' : 'none';
+}
+
+function setGrade(g) {
+  currentGrade = g;
+  document.querySelectorAll('.grade-tab').forEach(function(t,i){ t.classList.toggle('active', i+1===g); });
+  document.getElementById('grade-1-panel').style.display = g===1?'block':'none';
+  document.getElementById('grade-2-panel').style.display = g===2?'block':'none';
+}
+
+// ---- حساب الجمل تلقائياً ----
+function calcTotals(g) {
+  var p = 'g'+g+'_';
+  var allKeys = F1_ROWS.concat(F1_INIT).concat(F1_FIN).map(function(r){ return r.key; });
+  allKeys.forEach(function(key) {
+    var m = Number(document.getElementById(p+key+'_m') ? document.getElementById(p+key+'_m').value : 0) || 0;
+    var f = Number(document.getElementById(p+key+'_f') ? document.getElementById(p+key+'_f').value : 0) || 0;
+    var el = document.getElementById(p+key+'_tot');
+    if (el) el.textContent = m+f;
+  });
+}
+
+// ---- قراءة قيم الفورم ----
+function getFormData() {
+  var data = {
+    school_id:   SID,
+    school_name: SNAME,
+    school_type: STYPE,
+    password:    SPWD,
+    action:      isEdit ? 'update' : 'submit'
+  };
+
+  [1,2].forEach(function(g) {
+    var p = 'g'+g+'_';
+    function n(k) { var el = document.getElementById(p+k); return el ? Number(el.value)||0 : 0; }
+
+    F1_ROWS.concat(F1_INIT).concat(F1_FIN).forEach(function(r) {
+      data[p+r.key+'_m'] = n(r.key+'_m');
+      data[p+r.key+'_f'] = n(r.key+'_f');
+    });
+    F2_SUBJ.forEach(function(s) {
+      data[p+s.key+'_pres'] = n(s.key+'_pres');
+      data[p+s.key+'_pass'] = n(s.key+'_pass');
+      data[p+s.key+'_fail'] = n(s.key+'_fail');
+    });
+  });
+
+  return data;
+}
+
+// ---- تحميل البيانات الموجودة ----
+async function loadExisting() {
+  try {
+    var r = await fetch(SCRIPT_URL+'?action=getData&school_id='+SID);
+    var j = await r.json();
+    if (j.success && j.exists) {
+      existingData = j.data;
+      isEdit = true;
+      document.getElementById('b-exists').classList.add('on');
+      document.getElementById('btxt').textContent = '💾 حفظ التعديلات';
+      populateForm(j.data);
+    }
+  } catch(e) {}
+}
+
+function populateForm(rows) {
+  rows.forEach(function(row) {
+    var g = String(row['الصف'] || row.grade || '');
+    if (!g) return;
+    var p = 'g'+g+'_';
+
+    function set(k, v) { var el = document.getElementById(p+k); if(el) el.value = Number(v)||0; }
+
+    // map sheet column names back to field keys
+    var map = {
+      'مقيدين_ذ':'enrolled_m','مقيدين_ي':'enrolled_f',
+      'حاضرين60_ذ':'pct60_m','حاضرين60_ي':'pct60_f',
+      'مبدئي_حاضرين_ذ':'init_pres_m','مبدئي_حاضرين_ي':'init_pres_f',
+      'مبدئي_اجتازوا_ذ':'init_pass_m','مبدئي_اجتازوا_ي':'init_pass_f',
+      'مبدئي_لم_يجتازوا_ذ':'init_fail_m','مبدئي_لم_يجتازوا_ي':'init_fail_f',
+      'مبدئي_غائب_ذ':'init_abs_m','مبدئي_غائب_ي':'init_abs_f',
+      'نهائي_حاضرين_ذ':'fin_pres_m','نهائي_حاضرين_ي':'fin_pres_f',
+      'نهائي_اجتازوا_ذ':'fin_pass_m','نهائي_اجتازوا_ي':'fin_pass_f',
+      'نهائي_لم_يجتازوا_ذ':'fin_fail_m','نهائي_لم_يجتازوا_ي':'fin_fail_f',
+      'نهائي_غائب_ذ':'fin_abs_m','نهائي_غائب_ي':'fin_abs_f',
+      'ديني_حاضر':'rel_pres','ديني_اجتازوا':'rel_pass','ديني_لم_يجتازوا':'rel_fail',
+      'عربي_حاضر':'ara_pres','عربي_اجتازوا':'ara_pass','عربي_لم_يجتازوا':'ara_fail',
+      'انجليزي_حاضر':'eng_pres','انجليزي_اجتازوا':'eng_pass','انجليزي_لم_يجتازوا':'eng_fail',
+      'رياضيات_حاضر':'math_pres','رياضيات_اجتازوا':'math_pass','رياضيات_لم_يجتازوا':'math_fail',
+    };
+    Object.keys(map).forEach(function(col) {
+      if (row[col] !== undefined) set(map[col], row[col]);
+    });
+    calcTotals(g);
+  });
+}
+
+// ---- الحفظ مع إعادة المحاولة إذا كان الخادم مشغولاً ----
+async function saveData() {
+  hideBanners();
+  var data = getFormData();
+  var btn  = document.getElementById('submitBtn');
+  var spin = document.getElementById('spin');
+  var btxt = document.getElementById('btxt');
+  btn.disabled = true; spin.style.display = 'inline-block';
+  btxt.textContent = 'جارٍ الحفظ…';
+
+  var MAX_TRIES = 4;
+  for (var attempt = 1; attempt <= MAX_TRIES; attempt++) {
+    try {
+      var res  = await fetch(SCRIPT_URL, { method:'POST', body:JSON.stringify(data) });
+      var json = await res.json();
+
+      if (json.locked) {
+        // الخادم مشغول — انتظر وأعد المحاولة
+        document.getElementById('b-locked-msg').textContent = 'جدول Google مشغول — إعادة المحاولة ('+attempt+'/'+MAX_TRIES+')…';
+        document.getElementById('b-locked').classList.add('on');
+        if (attempt < MAX_TRIES) {
+          await sleep(3500);
+          continue;
+        } else {
+          showError('الخادم مشغول لفترة طويلة، يرجى المحاولة بعد دقيقة.');
+          break;
+        }
+      }
+
+      document.getElementById('b-locked').classList.remove('on');
+
+      if (json.success) {
+        isEdit = true;
+        data.action = 'update';
+        SPWD = data.password;
+        document.getElementById('b-exists').classList.add('on');
+        showSuccess(isEdit ? 'تم حفظ التعديلات بنجاح ✅' : 'تم حفظ البيانات بنجاح ✅');
+        document.getElementById('btxt').textContent = '💾 حفظ التعديلات';
+        break;
+      } else if (json.alreadyExists) {
+        isEdit = true;
+        data.action = 'update';
+        document.getElementById('b-exists').classList.add('on');
+        showError('البيانات موجودة مسبقاً — تم تفعيل وضع التعديل. أجرِ تعديلاتك واضغط "حفظ التعديلات".');
+        document.getElementById('btxt').textContent = '💾 حفظ التعديلات';
+        break;
+      } else {
+        showError(json.error || 'حدث خطأ غير متوقع.');
+        break;
+      }
+    } catch (e) {
+      if (attempt === MAX_TRIES) showError('فشل الاتصال بالخادم. تأكد من الاتصال بالإنترنت وحاول مجدداً.');
+      else await sleep(2500);
+    }
+  }
+
+  btn.disabled = false; spin.style.display = 'none';
+  if (!document.getElementById('b-success').classList.contains('on'))
+    btxt.textContent = isEdit ? '💾 حفظ التعديلات' : '📤 حفظ البيانات';
+}
+
+function sleep(ms){ return new Promise(function(r){ setTimeout(r, ms); }); }
+
+// ---- تغيير كلمة المرور ----
+function showChangePwd() { document.getElementById('pwd-modal').classList.add('on'); }
+function closePwdModal() {
+  document.getElementById('pwd-modal').classList.remove('on');
+  document.getElementById('pwd-err').classList.remove('on');
+  ['old-pwd','new-pwd','confirm-pwd'].forEach(function(id){ document.getElementById(id).value=''; });
+}
+
+async function changePassword() {
+  var old = document.getElementById('old-pwd').value;
+  var nw  = document.getElementById('new-pwd').value;
+  var cnf = document.getElementById('confirm-pwd').value;
+  var err = document.getElementById('pwd-err');
+
+  err.classList.remove('on');
+  if (!old || !nw) { err.textContent='جميع الحقول مطلوبة'; err.classList.add('on'); return; }
+  if (nw.length < 6) { err.textContent='كلمة المرور الجديدة (6 أحرف على الأقل)'; err.classList.add('on'); return; }
+  if (nw !== cnf) { err.textContent='كلمتا المرور غير متطابقتين'; err.classList.add('on'); return; }
+
+  try {
+    var res  = await fetch(SCRIPT_URL, { method:'POST', body:JSON.stringify({ action:'changePassword', school_id:SID, oldPassword:old, newPassword:nw }) });
+    var json = await res.json();
+    if (json.success) {
+      sessionStorage.setItem('password', nw);
+      SPWD = nw;
+      closePwdModal();
+      showSuccess('تم تغيير كلمة المرور بنجاح ✅');
+    } else {
+      err.textContent = json.error || 'فشل تغيير كلمة المرور';
+      err.classList.add('on');
+    }
+  } catch(e) {
+    err.textContent = 'خطأ في الاتصال';
+    err.classList.add('on');
+  }
+}
+
+function logout() {
+  sessionStorage.clear();
+  window.location.href = 'index.html';
+}
+
+function hideBanners() {
+  ['b-success','b-error','b-locked'].forEach(function(id){ document.getElementById(id).classList.remove('on'); });
+}
+function showSuccess(msg) { document.getElementById('b-success-msg').textContent=msg; document.getElementById('b-success').classList.add('on'); }
+function showError(msg)   { document.getElementById('b-error-msg').textContent=msg;   document.getElementById('b-error').classList.add('on'); }
+
+// ---- تهيئة الصفحة ----
+(function init() {
+  document.getElementById('school-name-top').textContent = SNAME || '';
+  document.getElementById('school-type-top').textContent = STYPE || '';
+
+  // بناء لوحتَي الصفوف
+  document.getElementById('grade-1-panel').innerHTML = buildGradeHTML(1);
+  document.getElementById('grade-2-panel').innerHTML = buildGradeHTML(2);
+
+  document.getElementById('loading').style.display = 'none';
+  document.getElementById('content').style.display = 'block';
+
+  loadExisting();
+})();
+</script>
+</body>
+</html>
