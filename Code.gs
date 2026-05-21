@@ -47,8 +47,9 @@ function handleLogin(d) {
   var rows      = authSheet.getDataRange().getValues();
 
   for (var i = 1; i < rows.length; i++) {
-    if (String(rows[i][0]) === String(d.school_id)) {
-      if (rows[i][1] === d.password) {
+    if (String(rows[i][0]).trim() === String(d.school_id).trim()) {
+      // تحويل كلاهما لـ String قبل المقارنة (Sheets يخزن الأرقام كـ number)
+      if (String(rows[i][1]).trim() === String(d.password).trim()) {
         authSheet.getRange(i + 1, 3).setValue(new Date().toISOString());
         return jsonResponse({ success: true, firstLogin: false });
       }
@@ -57,8 +58,9 @@ function handleLogin(d) {
   }
 
   // أول تسجيل دخول → الكود هو كلمة المرور الافتراضية
-  if (d.password === String(d.school_id)) {
-    authSheet.appendRow([d.school_id, d.school_id, new Date().toISOString()]);
+  if (String(d.password).trim() === String(d.school_id).trim()) {
+    // نخزّن كلمة المرور كـ نص صريح بإضافة apostrophe prefix
+    authSheet.appendRow(["'" + d.school_id, "'" + d.school_id, new Date().toISOString()]);
     return jsonResponse({ success: true, firstLogin: true });
   }
   return jsonResponse({ success: false, error: 'كلمة المرور غير صحيحة' });
@@ -73,8 +75,9 @@ function handleChangePassword(d) {
   var rows      = authSheet.getDataRange().getValues();
 
   for (var i = 1; i < rows.length; i++) {
-    if (String(rows[i][0]) === String(d.school_id)) {
-      authSheet.getRange(i + 1, 2).setValue(d.newPassword);
+    if (String(rows[i][0]).trim() === String(d.school_id).trim()) {
+      // نخزّن كلمة المرور الجديدة كـ نص صريح
+      authSheet.getRange(i + 1, 2).setValue("'" + d.newPassword);
       return jsonResponse({ success: true });
     }
   }
@@ -219,11 +222,11 @@ function validateAuth(school_id, password) {
   var authSheet = getOrCreateAuthSheet(ss);
   var rows      = authSheet.getDataRange().getValues();
   for (var i = 1; i < rows.length; i++) {
-    if (String(rows[i][0]) === String(school_id))
-      return rows[i][1] === password;
+    if (String(rows[i][0]).trim() === String(school_id).trim())
+      return String(rows[i][1]).trim() === String(password).trim();
   }
   // لم يُسجَّل بعد → الكود هو الباسوورد الافتراضي
-  return password === String(school_id);
+  return String(password).trim() === String(school_id).trim();
 }
 
 // بناء صف واحد للبيانات (صف دراسي محدد)
