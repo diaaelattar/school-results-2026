@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>إدخال البيانات — بوابة المدارس 2026</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
 :root{
   --g:#1D9E75;--gl:#E1F5EE;--gd:#0F6E56;
@@ -148,8 +149,24 @@ body{font-family:'Segoe UI','Cairo',Tahoma,sans-serif;background:var(--gray);min
         <span id="btxt">📤 حفظ البيانات</span>
       </button>
     </div>
+
+    <!-- Export bar — تظهر فقط بعد تسجيل بيانات -->
+    <div id="export-bar" style="display:none;margin-top:.8rem">
+      <div style="font-size:.78rem;color:var(--muted);margin-bottom:.5rem;text-align:center">تصدير وطباعة بيانات مدرستك</div>
+      <div style="display:flex;gap:.6rem;flex-wrap:wrap">
+        <button class="btn" style="flex:1;background:var(--bl);color:var(--blue);font-size:.88rem;padding:10px" onclick="exportSchoolExcel()">
+          📊 تصدير Excel
+        </button>
+        <button class="btn" style="flex:1;background:#F3E5F5;color:#6A1B9A;font-size:.88rem;padding:10px" onclick="printSchool()">
+          🖨️ طباعة
+        </button>
+      </div>
+    </div>
   </div>
 </div>
+
+<!-- Print template — مخفي، يُستخدم عند الطباعة فقط -->
+<div id="print-area" style="display:none"></div>
 
 <!-- Change Password Modal -->
 <div class="modal-bg" id="pwd-modal">
@@ -356,6 +373,7 @@ async function loadExisting() {
       isEdit = true;
       document.getElementById('b-exists').classList.add('on');
       document.getElementById('btxt').textContent = '💾 حفظ التعديلات';
+      document.getElementById('export-bar').style.display = 'block';
       populateForm(j.data);
     }
   } catch(e) {}
@@ -431,6 +449,7 @@ async function saveData() {
         document.getElementById('b-exists').classList.add('on');
         showSuccess(isEdit ? 'تم حفظ التعديلات بنجاح ✅' : 'تم حفظ البيانات بنجاح ✅');
         document.getElementById('btxt').textContent = '💾 حفظ التعديلات';
+        document.getElementById('export-bar').style.display = 'block'; // إظهار أزرار التصدير
         break;
       } else if (json.alreadyExists) {
         isEdit = true;
@@ -503,6 +522,169 @@ function hideBanners() {
 }
 function showSuccess(msg) { document.getElementById('b-success-msg').textContent=msg; document.getElementById('b-success').classList.add('on'); }
 function showError(msg)   { document.getElementById('b-error-msg').textContent=msg;   document.getElementById('b-error').classList.add('on'); }
+
+// ============================================================
+// دالة مشتركة: جمع بيانات الصف للتصدير
+// ============================================================
+function collectGradeRows(g) {
+  var p = 'g'+g+'_';
+  function n(k){ var el=document.getElementById(p+k); return el?Number(el.value)||0:0; }
+  return {
+    enrolled_m:n('enrolled_m'), enrolled_f:n('enrolled_f'),
+    pct60_m:n('pct60_m'),       pct60_f:n('pct60_f'),
+    init_pres_m:n('init_pres_m'),init_pres_f:n('init_pres_f'),
+    init_pass_m:n('init_pass_m'),init_pass_f:n('init_pass_f'),
+    init_fail_m:n('init_fail_m'),init_fail_f:n('init_fail_f'),
+    init_abs_m:n('init_abs_m'),  init_abs_f:n('init_abs_f'),
+    fin_pres_m:n('fin_pres_m'),  fin_pres_f:n('fin_pres_f'),
+    fin_pass_m:n('fin_pass_m'),  fin_pass_f:n('fin_pass_f'),
+    fin_fail_m:n('fin_fail_m'),  fin_fail_f:n('fin_fail_f'),
+    fin_abs_m:n('fin_abs_m'),    fin_abs_f:n('fin_abs_f'),
+    rel_pres:n('rel_pres'),rel_pass:n('rel_pass'),rel_fail:n('rel_fail'),
+    ara_pres:n('ara_pres'),ara_pass:n('ara_pass'),ara_fail:n('ara_fail'),
+    eng_pres:n('eng_pres'),eng_pass:n('eng_pass'),eng_fail:n('eng_fail'),
+    math_pres:n('math_pres'),math_pass:n('math_pass'),math_fail:n('math_fail')
+  };
+}
+
+// ============================================================
+// تصدير Excel للمدرسة — استمارة 1 + استمارة 2 في شيتين
+// ============================================================
+function exportSchoolExcel() {
+  var wb = XLSX.utils.book_new();
+  var today = new Date().toLocaleDateString('ar-EG');
+
+  [1,2].forEach(function(g) {
+    var d = collectGradeRows(g);
+    function s(m,f){ return d[m]+d[f]; }
+    var gradeLabel = g===1 ? 'الأول' : 'الثاني';
+
+    // ---- استمارة 1 ----
+    var ws1Data = [
+      ['محافظة الجيزة', '', 'مديرية التربية والتعليم بالجيزة'],
+      ['إدارة العمرانية التعليمية', '', 'بيان إحصائي بنتيجة نهاية العام الدراسي 2025/2026'],
+      ['المدرسة: ' + SNAME, '', 'الصف: '+gradeLabel+' الابتدائي — '+STYPE],
+      ['التاريخ: ' + today],
+      [],
+      ['البيان', 'بنون', 'بنات', 'جملة'],
+      ['عدد التلاميذ المقيدين', d.enrolled_m, d.enrolled_f, s('enrolled_m','enrolled_f')],
+      ['الحاضرون بنسبة 60%', d.pct60_m, d.pct60_f, s('pct60_m','pct60_f')],
+      ['— التقييم المبدئي —'],
+      ['الحاضرون', d.init_pres_m, d.init_pres_f, s('init_pres_m','init_pres_f')],
+      ['اجتازوا', d.init_pass_m, d.init_pass_f, s('init_pass_m','init_pass_f')],
+      ['لم يجتازوا', d.init_fail_m, d.init_fail_f, s('init_fail_m','init_fail_f')],
+      ['الغائب', d.init_abs_m, d.init_abs_f, s('init_abs_m','init_abs_f')],
+      ['— التقييم النهائي —'],
+      ['الحاضرون', d.fin_pres_m, d.fin_pres_f, s('fin_pres_m','fin_pres_f')],
+      ['اجتازوا', d.fin_pass_m, d.fin_pass_f, s('fin_pass_m','fin_pass_f')],
+      ['لم يجتازوا', d.fin_fail_m, d.fin_fail_f, s('fin_fail_m','fin_fail_f')],
+      ['الغائب', d.fin_abs_m, d.fin_abs_f, s('fin_abs_m','fin_abs_f')]
+    ];
+    var ws1 = XLSX.utils.aoa_to_sheet(ws1Data);
+    ws1['!cols'] = [{wch:30},{wch:10},{wch:10},{wch:10}];
+    XLSX.utils.book_append_sheet(wb, ws1, 'استمارة1-صف'+gradeLabel);
+
+    // ---- استمارة 2 ----
+    var ws2Data = [
+      ['المدرسة: ' + SNAME + ' — الصف ' + gradeLabel],
+      ['استمارة رقم (2) — أداء المواد الدراسية'],
+      [],
+      ['المادة', 'الحاضرون', 'اجتازوا', 'لم يجتازوا'],
+      ['التربية الدينية',  d.rel_pres,  d.rel_pass,  d.rel_fail],
+      ['اللغة العربية',    d.ara_pres,  d.ara_pass,  d.ara_fail],
+      ['اللغة الإنجليزية',d.eng_pres,  d.eng_pass,  d.eng_fail],
+      ['الرياضيات',        d.math_pres, d.math_pass, d.math_fail]
+    ];
+    var ws2 = XLSX.utils.aoa_to_sheet(ws2Data);
+    ws2['!cols'] = [{wch:24},{wch:12},{wch:12},{wch:14}];
+    XLSX.utils.book_append_sheet(wb, ws2, 'استمارة2-صف'+gradeLabel);
+  });
+
+  XLSX.writeFile(wb, 'نتائج_'+SNAME+'_2026.xlsx');
+}
+
+// ============================================================
+// طباعة بيانات المدرسة — HTML منسّق يُفتح في نافذة طباعة
+// ============================================================
+function printSchool() {
+  var today = new Date().toLocaleDateString('ar-EG');
+
+  function tableF1(g, d) {
+    function s(m,f){ return d[m]+d[f]; }
+    var rows = [
+      ['عدد التلاميذ المقيدين', d.enrolled_m, d.enrolled_f, s('enrolled_m','enrolled_f')],
+      ['الحاضرون بنسبة 60%',   d.pct60_m,    d.pct60_f,    s('pct60_m','pct60_f')],
+      ['__sep__التقييم المبدئي'],
+      ['الحاضرون',  d.init_pres_m, d.init_pres_f, s('init_pres_m','init_pres_f')],
+      ['اجتازوا',   d.init_pass_m, d.init_pass_f, s('init_pass_m','init_pass_f')],
+      ['لم يجتازوا',d.init_fail_m, d.init_fail_f, s('init_fail_m','init_fail_f')],
+      ['الغائب',    d.init_abs_m,  d.init_abs_f,  s('init_abs_m','init_abs_f')],
+      ['__sep__التقييم النهائي'],
+      ['الحاضرون',  d.fin_pres_m, d.fin_pres_f, s('fin_pres_m','fin_pres_f')],
+      ['اجتازوا',   d.fin_pass_m, d.fin_pass_f, s('fin_pass_m','fin_pass_f')],
+      ['لم يجتازوا',d.fin_fail_m, d.fin_fail_f, s('fin_fail_m','fin_fail_f')],
+      ['الغائب',    d.fin_abs_m,  d.fin_abs_f,  s('fin_abs_m','fin_abs_f')],
+    ];
+    var html = '<h3 style="color:#0F6E56;margin:12px 0 6px">الصف '+(g===1?'الأول':'الثاني')+' — استمارة (1)</h3>';
+    html += '<table><thead><tr><th>البيان</th><th>بنون</th><th>بنات</th><th>جملة</th></tr></thead><tbody>';
+    rows.forEach(function(r){
+      if(r[0].startsWith('__sep__')){
+        html += '<tr><td colspan="4" style="background:#E1F5EE;color:#0F6E56;font-weight:700;text-align:center">'+r[0].replace('__sep__','')+'</td></tr>';
+      } else {
+        html += '<tr><td>'+r[0]+'</td><td>'+r[1]+'</td><td>'+r[2]+'</td><td style="font-weight:700">'+r[3]+'</td></tr>';
+      }
+    });
+    return html + '</tbody></table>';
+  }
+
+  function tableF2(g, d) {
+    var subjs = [
+      ['التربية الدينية',   d.rel_pres,  d.rel_pass,  d.rel_fail],
+      ['اللغة العربية',     d.ara_pres,  d.ara_pass,  d.ara_fail],
+      ['اللغة الإنجليزية', d.eng_pres,  d.eng_pass,  d.eng_fail],
+      ['الرياضيات',         d.math_pres, d.math_pass, d.math_fail]
+    ];
+    var html = '<h3 style="color:#0F6E56;margin:12px 0 6px">الصف '+(g===1?'الأول':'الثاني')+' — استمارة (2) — أداء المواد</h3>';
+    html += '<table><thead><tr><th>المادة</th><th>الحاضرون</th><th>اجتازوا</th><th>لم يجتازوا</th></tr></thead><tbody>';
+    subjs.forEach(function(r){
+      html += '<tr><td>'+r[0]+'</td><td>'+r[1]+'</td><td style="color:#0F6E56;font-weight:700">'+r[2]+'</td><td style="color:#E24B4A">'+r[3]+'</td></tr>';
+    });
+    return html + '</tbody></table>';
+  }
+
+  var d1 = collectGradeRows(1), d2 = collectGradeRows(2);
+
+  var html = '<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8">'
+    + '<title>نتائج '+SNAME+'</title><style>'
+    + 'body{font-family:Arial,sans-serif;direction:rtl;padding:20px;color:#222;font-size:13px}'
+    + '.header{text-align:center;border-bottom:3px solid #0F6E56;padding-bottom:10px;margin-bottom:16px}'
+    + '.header h1{font-size:17px;color:#0F6E56;margin:0}'
+    + '.header p{margin:3px 0;font-size:12px;color:#555}'
+    + 'table{width:100%;border-collapse:collapse;margin-bottom:14px;font-size:12px}'
+    + 'th{background:#0F6E56;color:#fff;padding:6px 8px;text-align:center}'
+    + 'td{padding:5px 8px;border:1px solid #ccc;text-align:center}'
+    + 'td:first-child{text-align:right;font-weight:500}'
+    + 'tr:nth-child(even) td{background:#f7faf7}'
+    + '.page-break{page-break-after:always;margin:20px 0}'
+    + '@media print{button{display:none}}'
+    + '</style></head><body>'
+    + '<div class="header">'
+    + '<p>محافظة الجيزة — مديرية التربية والتعليم</p>'
+    + '<h1>إدارة العمرانية التعليمية</h1>'
+    + '<p>بيان إحصائي بنتيجة نهاية العام الدراسي 2025/2026</p>'
+    + '<p><strong>المدرسة:</strong> '+SNAME+' &nbsp;|&nbsp; <strong>النوع:</strong> '+STYPE+' &nbsp;|&nbsp; <strong>التاريخ:</strong> '+today+'</p>'
+    + '</div>'
+    + '<button onclick="window.print()" style="margin-bottom:14px;padding:8px 20px;background:#0F6E56;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:13px">🖨️ طباعة الصفحة</button>'
+    + tableF1(1,d1) + tableF2(1,d1)
+    + '<div class="page-break"></div>'
+    + tableF1(2,d2) + tableF2(2,d2)
+    + '</body></html>';
+
+  var w = window.open('','_blank','width=900,height=700');
+  w.document.write(html);
+  w.document.close();
+  setTimeout(function(){ w.print(); }, 500);
+}
 
 // ---- تهيئة الصفحة ----
 (function init() {

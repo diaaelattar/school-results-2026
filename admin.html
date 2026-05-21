@@ -80,9 +80,11 @@ table.agg tr:hover td:not(.name){background:#f9fffe}
     <div class="card">
       <div class="card-hdr">
         <h2>📋 الإحصاء التجميعي — الاستمارة رقم (1)</h2>
-        <div style="display:flex;gap:.5rem">
+        <div style="display:flex;gap:.5rem;flex-wrap:wrap">
           <button class="btn-ref" onclick="loadData()">🔄 تحديث</button>
-          <button class="btn-exp" onclick="exportExcel()">⬇ تصدير Excel</button>
+          <button class="btn-exp" onclick="exportExcel()">📊 Excel تجميعي</button>
+          <button class="btn-exp" style="background:#F3E5F5;color:#6A1B9A;border-color:#CE93D8" onclick="exportByType()">📁 Excel بالنوعيات</button>
+          <button class="btn-exp" style="background:#E8EAF6;color:#283593;border-color:#9FA8DA" onclick="printAggregate()">🖨️ طباعة</button>
         </div>
       </div>
       <div class="gtabs">
@@ -307,62 +309,491 @@ function renderAgg2(g) {
   container.innerHTML = html;
 }
 
-// تصدير Excel مطابق للنموذج
+// تصدير Excel مطابق تماماً للتنسيق الأصلي
 function exportExcel() {
   if (!aggData) return;
   var wb = XLSX.utils.book_new();
 
-  [1,2].forEach(function(g) {
-    var wsData = [];
-    wsData.push(['محافظة الجيزة']);
-    wsData.push(['مديرية التربية والتعليم', 'بيان إحصائي (الصف '+(g===1?'الأول':'الثاني')+' الابتدائي)']);
-    wsData.push(['إدارة العمرانية التعليمية', 'استمارة رقم (1)']);
-    wsData.push(['التعليم الابتدائي', 'عن التقييم المبدئي والتقييم النهائي العام الدراسي 2025/2026']);
-    wsData.push([]);
-    wsData.push(['نوع التعليم','عدد المدارس',
-      'مقيدين ذ','مقيدين ي','مقيدين ج',
-      'حاضرين60 ذ','حاضرين60 ي','حاضرين60 ج',
-      'مبدئي حاضرين ذ','مبدئي حاضرين ي','مبدئي حاضرين ج',
-      'مبدئي اجتازوا ذ','مبدئي اجتازوا ي','مبدئي اجتازوا ج',
-      'مبدئي لم يجتازوا ذ','مبدئي لم يجتازوا ي','مبدئي لم يجتازوا ج',
-      'مبدئي غائب ذ','مبدئي غائب ي','مبدئي غائب ج',
-      'نهائي حاضرين ذ','نهائي حاضرين ي','نهائي حاضرين ج',
-      'نهائي اجتازوا ذ','نهائي اجتازوا ي','نهائي اجتازوا ج',
-      'نهائي لم يجتازوا ذ','نهائي لم يجتازوا ي','نهائي لم يجتازوا ج',
-      'نهائي غائب ذ','نهائي غائب ي','نهائي غائب ج'
-    ]);
+  // بناء شيت واحد يحتوي الصفين كما هو في الملف الأصلي
+  var ws = buildOfficialSheet();
+  XLSX.utils.book_append_sheet(wb, ws, 'الأول والثاني');
 
+  // شيت مبسّط (ملف 2) — إجمالي + ناجحين + علاجي
+  var ws2 = buildSimpleSheet();
+  XLSX.utils.book_append_sheet(wb, ws2, 'إجمالي مبسّط');
+
+  XLSX.writeFile(wb, 'الإحصاء_التجميعي_العمرانية_2026.xlsx');
+}
+
+// ============================================================
+// بناء الشيت الرسمي (مطابق للنموذج الأصلي)
+// ============================================================
+function buildOfficialSheet() {
+  // نبني الجداول للصف الأول ثم الثاني في نفس الشيت
+  var rows = [];
+  var merges = [];
+  var rowOffset = 0;
+
+  function addBlankRow() { rows.push(emptyRow(34)); rowOffset++; }
+
+  [1, 2].forEach(function(g) {
+    var gradeAr = g === 1 ? 'الأول' : 'الثاني';
     var d = aggData[String(g)] || {};
-    var grand = new Array(30).fill(0);
+
+    // ===== رأس الصفحة (4 صفوف) =====
+    var r0 = rowOffset;
+
+    // صف فارغ قبل كل صف دراسي (عدا الأول)
+    if (g === 2) { addBlankRow(); addBlankRow(); r0 = rowOffset; }
+
+    rows.push(emptyRow(34)); // صف 1: محافظة الجيزة
+    rows[rowOffset][2] = 'محافظة الجيزة';
+    merges.push({s:{r:rowOffset,c:2}, e:{r:rowOffset,c:33}});
+    rowOffset++;
+
+    rows.push(emptyRow(34)); // صف 2: مديرية + بيان
+    rows[rowOffset][2] = 'مديرية التربية والتعليم';
+    rows[rowOffset][11] = 'بيان إحصائي ( الصف ' + gradeAr + ' الابتدائي )';
+    merges.push({s:{r:rowOffset,c:2}, e:{r:rowOffset,c:10}});
+    merges.push({s:{r:rowOffset,c:11}, e:{r:rowOffset,c:33}});
+    rowOffset++;
+
+    rows.push(emptyRow(34)); // صف 3: إدارة + استمارة
+    rows[rowOffset][2] = 'إدارة العمرانية التعليمية';
+    rows[rowOffset][19] = 'استمارة رقم ( 1 )';
+    merges.push({s:{r:rowOffset,c:2}, e:{r:rowOffset,c:18}});
+    merges.push({s:{r:rowOffset,c:19}, e:{r:rowOffset,c:33}});
+    rowOffset++;
+
+    rows.push(emptyRow(34)); // صف 4: التعليم الابتدائي + عن التقييم
+    rows[rowOffset][2] = 'التعليم الابتدائي';
+    rows[rowOffset][11] = 'عن التقييم المبدئي والتقييم النهائي العام الدراسي 2025/ 2026';
+    merges.push({s:{r:rowOffset,c:2}, e:{r:rowOffset,c:10}});
+    merges.push({s:{r:rowOffset,c:11}, e:{r:rowOffset,c:33}});
+    rowOffset++;
+
+    // ===== رؤوس الأعمدة (3 صفوف) =====
+    var hdr1 = emptyRow(34);
+    hdr1[2]  = 'نوع التعليم';
+    hdr1[3]  = 'عدد المدارس';
+    hdr1[4]  = 'عدد التلاميذ المقيدين';
+    hdr1[7]  = 'عدد الحاضرين بنسبة60%';
+    hdr1[10] = 'التقييم المبدئي';
+    hdr1[22] = 'التقييم النهائي';
+    rows.push(hdr1);
+    merges.push({s:{r:rowOffset,c:2}, e:{r:rowOffset+2,c:2}}); // نوع التعليم
+    merges.push({s:{r:rowOffset,c:3}, e:{r:rowOffset+2,c:3}}); // عدد المدارس
+    merges.push({s:{r:rowOffset,c:4}, e:{r:rowOffset+1,c:6}}); // المقيدين
+    merges.push({s:{r:rowOffset,c:7}, e:{r:rowOffset+1,c:9}}); // حاضرين60%
+    merges.push({s:{r:rowOffset,c:10}, e:{r:rowOffset,c:21}}); // التقييم المبدئي
+    merges.push({s:{r:rowOffset,c:22}, e:{r:rowOffset,c:33}}); // التقييم النهائي
+    rowOffset++;
+
+    var hdr2 = emptyRow(34);
+    hdr2[10] = 'عدد التلاميذ الحاضرين';
+    hdr2[13] = 'عدد الذين اجتازوا';
+    hdr2[16] = 'عدد الذين لم يجتازوا';
+    hdr2[19] = 'الغائب';
+    hdr2[22] = 'عدد التلاميذ الحاضرين';
+    hdr2[25] = 'عدد الذين اجتازوا';
+    hdr2[28] = 'عدد الذين لم يجتازوا';
+    hdr2[31] = 'الغائب';
+    rows.push(hdr2);
+    merges.push({s:{r:rowOffset,c:10}, e:{r:rowOffset,c:12}});
+    merges.push({s:{r:rowOffset,c:13}, e:{r:rowOffset,c:15}});
+    merges.push({s:{r:rowOffset,c:16}, e:{r:rowOffset,c:18}});
+    merges.push({s:{r:rowOffset,c:19}, e:{r:rowOffset,c:21}});
+    merges.push({s:{r:rowOffset,c:22}, e:{r:rowOffset,c:24}});
+    merges.push({s:{r:rowOffset,c:25}, e:{r:rowOffset,c:27}});
+    merges.push({s:{r:rowOffset,c:28}, e:{r:rowOffset,c:30}});
+    merges.push({s:{r:rowOffset,c:31}, e:{r:rowOffset,c:33}});
+    rowOffset++;
+
+    var hdr3 = emptyRow(34);
+    hdr3[2] = ''; hdr3[3] = '';
+    for (var c = 4; c <= 33; c += 3) { hdr3[c] = 'بنون'; hdr3[c+1] = 'بنات'; hdr3[c+2] = 'جملة'; }
+    rows.push(hdr3);
+    rowOffset++;
+
+    // ===== صفوف البيانات =====
+    var grandRow = newZeroRow(34);
+    grandRow[2] = 'الإجمالي';
     var grandCount = 0;
 
     TYPE_ORDER.forEach(function(type) {
       var t = d[type]; if (!t) return;
-      function v(f){ return t[f]||0; }
+      function v(k){ return t[k]||0; }
       function s(m,f){ return v(m)+v(f); }
-      var row = [type, t.count||0,
-        v('مقيدين_ذ'),v('مقيدين_ي'),s('مقيدين_ذ','مقيدين_ي'),
-        v('حاضرين60_ذ'),v('حاضرين60_ي'),s('حاضرين60_ذ','حاضرين60_ي'),
+
+      var dataRow = emptyRow(34);
+      dataRow[2] = type;
+      dataRow[3] = t.count||0;
+      var nums = [
+        v('مقيدين_ذ'),    v('مقيدين_ي'),    s('مقيدين_ذ','مقيدين_ي'),
+        v('حاضرين60_ذ'),  v('حاضرين60_ي'),  s('حاضرين60_ذ','حاضرين60_ي'),
         v('مبدئي_حاضرين_ذ'),v('مبدئي_حاضرين_ي'),s('مبدئي_حاضرين_ذ','مبدئي_حاضرين_ي'),
         v('مبدئي_اجتازوا_ذ'),v('مبدئي_اجتازوا_ي'),s('مبدئي_اجتازوا_ذ','مبدئي_اجتازوا_ي'),
         v('مبدئي_لم_يجتازوا_ذ'),v('مبدئي_لم_يجتازوا_ي'),s('مبدئي_لم_يجتازوا_ذ','مبدئي_لم_يجتازوا_ي'),
-        v('مبدئي_غائب_ذ'),v('مبدئي_غائب_ي'),s('مبدئي_غائب_ذ','مبدئي_غائب_ي'),
+        v('مبدئي_غائب_ذ'), v('مبدئي_غائب_ي'), s('مبدئي_غائب_ذ','مبدئي_غائب_ي'),
         v('نهائي_حاضرين_ذ'),v('نهائي_حاضرين_ي'),s('نهائي_حاضرين_ذ','نهائي_حاضرين_ي'),
         v('نهائي_اجتازوا_ذ'),v('نهائي_اجتازوا_ي'),s('نهائي_اجتازوا_ذ','نهائي_اجتازوا_ي'),
         v('نهائي_لم_يجتازوا_ذ'),v('نهائي_لم_يجتازوا_ي'),s('نهائي_لم_يجتازوا_ذ','نهائي_لم_يجتازوا_ي'),
-        v('نهائي_غائب_ذ'),v('نهائي_غائب_ي'),s('نهائي_غائب_ذ','نهائي_غائب_ي')
+        v('نهائي_غائب_ذ'), v('نهائي_غائب_ي'), s('نهائي_غائب_ذ','نهائي_غائب_ي')
       ];
-      row.slice(1).forEach(function(val,i){ grand[i]+= Number(val)||0; });
+      nums.forEach(function(n, i){ dataRow[4+i] = n; if(i%3!==2) grandRow[4+i] = (grandRow[4+i]||0)+n; });
+      // إعادة حساب الجمل في صف الإجمالي
+      for (var ci = 4; ci <= 31; ci += 3) grandRow[ci+2] = (grandRow[ci]||0)+(grandRow[ci+1]||0);
       grandCount += t.count||0;
+      rows.push(dataRow);
+      rowOffset++;
+    });
+
+    grandRow[3] = grandCount;
+    rows.push(grandRow);
+    rowOffset++;
+
+    // ===== الاستمارة رقم (2) =====
+    addBlankRow();
+
+    var s2title = emptyRow(34);
+    s2title[3] = 'بيان احصائي الصف ' + gradeAr + ' الابتدائي                استمارة  رقم (2)';
+    rows.push(s2title);
+    merges.push({s:{r:rowOffset,c:3}, e:{r:rowOffset,c:33}});
+    rowOffset++;
+
+    addBlankRow();
+
+    var s2h1 = emptyRow(16);
+    s2h1[2] = 'نوعية التعليم'; s2h1[3] = 'المقيد';
+    s2h1[4] = 'تربية دينية'; s2h1[7] = 'لغة عربية';
+    s2h1[10]= 'لغة إنجليزية'; s2h1[13]= 'رياضيات';
+    rows.push(s2h1);
+    merges.push({s:{r:rowOffset,c:2}, e:{r:rowOffset+1,c:2}});
+    merges.push({s:{r:rowOffset,c:3}, e:{r:rowOffset+1,c:3}});
+    merges.push({s:{r:rowOffset,c:4},  e:{r:rowOffset,c:6}});
+    merges.push({s:{r:rowOffset,c:7},  e:{r:rowOffset,c:9}});
+    merges.push({s:{r:rowOffset,c:10}, e:{r:rowOffset,c:12}});
+    merges.push({s:{r:rowOffset,c:13}, e:{r:rowOffset,c:15}});
+    rowOffset++;
+
+    var s2h2 = emptyRow(16);
+    for (var ci2 = 4; ci2 <= 13; ci2 += 3) {
+      s2h2[ci2] = 'حاضر'; s2h2[ci2+1] = 'اجتازوا'; s2h2[ci2+2] = 'لم يجتازوا';
+    }
+    rows.push(s2h2); rowOffset++;
+
+    // أسماء النوعيات في الاستمارة 2
+    var TYPE2_MAP = {
+      'مدارس رسمي عربي':  'جملة المدارس الرسمية عربي',
+      'مدارس رسمي لغات':  'جملة المدارس الرسمية لغات',
+      'مدارس خاص عربي':   'جملة المدارس الخاصة عربى',
+      'مدارس خاص لغات':   'جملة المدارس الخاصة لغات',
+      'مدارس دولي':        'جملة المدارس الدولية'
+    };
+    var grandS2 = newZeroRow(16);
+    grandS2[2] = 'الجملة العامة للإدارة';
+
+    TYPE_ORDER.forEach(function(type) {
+      var t = d[type]; if (!t) return;
+      function v(k){ return t[k]||0; }
+      var enr = v('مقيدين_ذ')+v('مقيدين_ي');
+      var s2row = emptyRow(16);
+      s2row[2] = TYPE2_MAP[type]||type;
+      s2row[3] = enr;
+      var subjs = [
+        [v('ديني_حاضر'),  v('ديني_اجتازوا'),  v('ديني_لم_يجتازوا')],
+        [v('عربي_حاضر'),  v('عربي_اجتازوا'),  v('عربي_لم_يجتازوا')],
+        [v('انجليزي_حاضر'),v('انجليزي_اجتازوا'),v('انجليزي_لم_يجتازوا')],
+        [v('رياضيات_حاضر'),v('رياضيات_اجتازوا'),v('رياضيات_لم_يجتازوا')]
+      ];
+      subjs.forEach(function(s, si) {
+        s2row[4+si*3] = s[0]; s2row[5+si*3] = s[1]; s2row[6+si*3] = s[2];
+        grandS2[4+si*3] = (grandS2[4+si*3]||0)+s[0];
+        grandS2[5+si*3] = (grandS2[5+si*3]||0)+s[1];
+        grandS2[6+si*3] = (grandS2[6+si*3]||0)+s[2];
+      });
+      grandS2[3] = (grandS2[3]||0)+enr;
+      rows.push(s2row); rowOffset++;
+    });
+
+    rows.push(grandS2); rowOffset++;
+
+    // توقيعات
+    var sig = emptyRow(34);
+    sig[2] = '            مدير المرحلة         ';
+    sig[19] = 'مدير عام الإدارة';
+    rows.push(sig); rowOffset++;
+    addBlankRow();
+  });
+
+  // بناء الـ worksheet
+  var ws = XLSX.utils.aoa_to_sheet(rows);
+  ws['!merges'] = merges;
+  ws['!cols'] = [
+    {wch:2}, {wch:2},       // A, B (spacers)
+    {wch:32}, {wch:13},     // C (نوع التعليم), D (عدد المدارس)
+  ].concat(new Array(30).fill({wch:8}));
+  return ws;
+}
+
+// شيت إجمالي مبسّط (الملف الثاني)
+function buildSimpleSheet() {
+  var rows = [];
+  var merges = [];
+
+  var blank = emptyRow(9);
+  rows.push(blank, blank, blank, blank, blank); // 5 صفوف بيضاء
+
+  var r = rows.length;
+  var t1 = emptyRow(9);
+  t1[0] = 'الإدارة المركزية للتعليم العام';
+  merges.push({s:{r:0,c:0}, e:{r:0,c:8}});
+  rows.push(t1);
+
+  var t2 = emptyRow(9); t2[0] = 'الإدارة العامة للتعليم الابتدائى';
+  merges.push({s:{r:1,c:0}, e:{r:1,c:8}});
+  rows.push(t2);
+
+  var t3 = emptyRow(9); t3[0] = 'بيان إحصائى بنتيجة نهاية العام الدراسى 2026/2025 لتلاميذ الصفين الأول والثانى الابتدائى';
+  merges.push({s:{r:2,c:0}, e:{r:2,c:8}});
+  rows.push(t3);
+
+  var hdr1 = ['م', 'المحافظة', 'الإدارة التعليمية', 'الصف الأول', '', '', 'الصف الثانى', '', ''];
+  var hdr2 = ['', '', '', 'إجمالى', 'عدد الناجحين', 'عدد التلاميذ الذين لهم برنامج علاجى', 'إجمالى', 'عدد الناجحين', 'عدد التلاميذ الذين لهم برنامج علاجى'];
+  rows.push(hdr1); rows.push(hdr2);
+  merges.push({s:{r:3,c:0}, e:{r:4,c:0}});
+  merges.push({s:{r:3,c:1}, e:{r:4,c:1}});
+  merges.push({s:{r:3,c:2}, e:{r:4,c:2}});
+  merges.push({s:{r:3,c:3}, e:{r:3,c:5}});
+  merges.push({s:{r:3,c:6}, e:{r:3,c:8}});
+
+  function gradeTotal(g, key) {
+    var d = aggData[String(g)] || {};
+    return TYPE_ORDER.reduce(function(s, type) {
+      var t = d[type]; if (!t) return s;
+      return s + (t[key] || 0);
+    }, 0);
+  }
+
+  var g1Total  = gradeTotal(1,'مقيدين_ذ') + gradeTotal(1,'مقيدين_ي');
+  var g1Pass   = gradeTotal(1,'نهائي_اجتازوا_ذ') + gradeTotal(1,'نهائي_اجتازوا_ي');
+  var g1Fail   = gradeTotal(1,'نهائي_لم_يجتازوا_ذ') + gradeTotal(1,'نهائي_لم_يجتازوا_ي');
+  var g2Total  = gradeTotal(2,'مقيدين_ذ') + gradeTotal(2,'مقيدين_ي');
+  var g2Pass   = gradeTotal(2,'نهائي_اجتازوا_ذ') + gradeTotal(2,'نهائي_اجتازوا_ي');
+  var g2Fail   = gradeTotal(2,'نهائي_لم_يجتازوا_ذ') + gradeTotal(2,'نهائي_لم_يجتازوا_ي');
+
+  rows.push([1, 'الجيزة', 'العمرانية', g1Total, g1Pass, g1Fail, g2Total, g2Pass, g2Fail]);
+
+  var ws = XLSX.utils.aoa_to_sheet(rows);
+  ws['!merges'] = merges;
+  ws['!cols'] = [{wch:5},{wch:12},{wch:18},{wch:10},{wch:12},{wch:28},{wch:10},{wch:12},{wch:28}];
+  return ws;
+}
+
+// دوال مساعدة
+function emptyRow(n) { return new Array(n).fill(''); }
+function newZeroRow(n) { return new Array(n).fill(0); }
+
+// ============================================================
+// Excel بالنوعيات — شيت منفصل لكل نوعية تعليم + شيت إجمالي
+// ============================================================
+function exportByType() {
+  if (!aggData) return;
+  var wb   = XLSX.utils.book_new();
+  var today = new Date().toLocaleDateString('ar-EG');
+
+  var F1_HEADERS = ['نوع التعليم','عدد المدارس',
+    'مقيدين ذ','مقيدين ي','مقيدين ج',
+    'حاضرين60 ذ','حاضرين60 ي','حاضرين60 ج',
+    'مبدئي حاضرين ذ','مبدئي حاضرين ي','مبدئي حاضرين ج',
+    'مبدئي اجتازوا ذ','مبدئي اجتازوا ي','مبدئي اجتازوا ج',
+    'مبدئي لم يجتازوا ذ','مبدئي لم يجتازوا ي','مبدئي لم يجتازوا ج',
+    'مبدئي غائب ذ','مبدئي غائب ي','مبدئي غائب ج',
+    'نهائي حاضرين ذ','نهائي حاضرين ي','نهائي حاضرين ج',
+    'نهائي اجتازوا ذ','نهائي اجتازوا ي','نهائي اجتازوا ج',
+    'نهائي لم يجتازوا ذ','نهائي لم يجتازوا ي','نهائي لم يجتازوا ج',
+    'نهائي غائب ذ','نهائي غائب ي','نهائي غائب ج'];
+
+  function buildTypeRow(type, t) {
+    function v(f){ return t[f]||0; }
+    function s(m,f){ return v(m)+v(f); }
+    return [type, t.count||0,
+      v('مقيدين_ذ'),v('مقيدين_ي'),s('مقيدين_ذ','مقيدين_ي'),
+      v('حاضرين60_ذ'),v('حاضرين60_ي'),s('حاضرين60_ذ','حاضرين60_ي'),
+      v('مبدئي_حاضرين_ذ'),v('مبدئي_حاضرين_ي'),s('مبدئي_حاضرين_ذ','مبدئي_حاضرين_ي'),
+      v('مبدئي_اجتازوا_ذ'),v('مبدئي_اجتازوا_ي'),s('مبدئي_اجتازوا_ذ','مبدئي_اجتازوا_ي'),
+      v('مبدئي_لم_يجتازوا_ذ'),v('مبدئي_لم_يجتازوا_ي'),s('مبدئي_لم_يجتازوا_ذ','مبدئي_لم_يجتازوا_ي'),
+      v('مبدئي_غائب_ذ'),v('مبدئي_غائب_ي'),s('مبدئي_غائب_ذ','مبدئي_غائب_ي'),
+      v('نهائي_حاضرين_ذ'),v('نهائي_حاضرين_ي'),s('نهائي_حاضرين_ذ','نهائي_حاضرين_ي'),
+      v('نهائي_اجتازوا_ذ'),v('نهائي_اجتازوا_ي'),s('نهائي_اجتازوا_ذ','نهائي_اجتازوا_ي'),
+      v('نهائي_لم_يجتازوا_ذ'),v('نهائي_لم_يجتازوا_ي'),s('نهائي_لم_يجتازوا_ذ','نهائي_لم_يجتازوا_ي'),
+      v('نهائي_غائب_ذ'),v('نهائي_غائب_ي'),s('نهائي_غائب_ذ','نهائي_غائب_ي')];
+  }
+
+  // شيت لكل نوعية — يحتوي صفي الصف الأول والثاني
+  TYPE_ORDER.forEach(function(type) {
+    var wsData = [
+      ['إدارة العمرانية التعليمية — '+type, '', 'العام الدراسي 2025/2026'],
+      ['تاريخ التصدير: '+today],
+      [],
+      ['الصف'].concat(F1_HEADERS.slice(1))
+    ];
+
+    [1,2].forEach(function(g) {
+      var d = (aggData[String(g)]||{})[type];
+      if (!d) return;
+      var row = buildTypeRow('الصف '+(g===1?'الأول':'الثاني'), d);
       wsData.push(row);
     });
 
-    wsData.push(['الإجمالي', grandCount].concat(grand));
+    // استمارة 2 نفس النوعية
+    wsData.push([]);
+    wsData.push(['استمارة (2) — أداء المواد الدراسية']);
+    wsData.push(['الصف','المقيدون','ديني حاضر','ديني اجتازوا','ديني لم يجتازوا','عربي حاضر','عربي اجتازوا','عربي لم يجتازوا','انجليزي حاضر','انجليزي اجتازوا','انجليزي لم يجتازوا','رياضيات حاضر','رياضيات اجتازوا','رياضيات لم يجتازوا']);
+
+    [1,2].forEach(function(g) {
+      var d = (aggData[String(g)]||{})[type];
+      if (!d) return;
+      function v(k){ return d[k]||0; }
+      wsData.push([
+        'الصف '+(g===1?'الأول':'الثاني'),
+        v('مقيدين_ذ')+v('مقيدين_ي'),
+        v('ديني_حاضر'),v('ديني_اجتازوا'),v('ديني_لم_يجتازوا'),
+        v('عربي_حاضر'),v('عربي_اجتازوا'),v('عربي_لم_يجتازوا'),
+        v('انجليزي_حاضر'),v('انجليزي_اجتازوا'),v('انجليزي_لم_يجتازوا'),
+        v('رياضيات_حاضر'),v('رياضيات_اجتازوا'),v('رياضيات_لم_يجتازوا')
+      ]);
+    });
+
+    // اختصار اسم الشيت (Excel يرفض أكثر من 31 حرف)
+    var sheetName = type.replace('مدارس ','').substring(0,28);
     var ws = XLSX.utils.aoa_to_sheet(wsData);
-    XLSX.utils.book_append_sheet(wb, ws, 'الصف '+(g===1?'الأول':'الثاني'));
+    ws['!cols'] = [{wch:18}].concat(new Array(32).fill({wch:11}));
+    XLSX.utils.book_append_sheet(wb, ws, sheetName);
   });
 
-  XLSX.writeFile(wb, 'الإحصاء_التجميعي_2026.xlsx');
+  // شيت إجمالي عام
+  var summaryData = [
+    ['إدارة العمرانية التعليمية — الإجمالي العام'],
+    ['تاريخ التصدير: '+today],
+    [],
+    F1_HEADERS
+  ];
+  [1,2].forEach(function(g) {
+    var d    = aggData[String(g)] || {};
+    var grand = {count:0};
+    ['مقيدين_ذ','مقيدين_ي','حاضرين60_ذ','حاضرين60_ي','مبدئي_حاضرين_ذ','مبدئي_حاضرين_ي','مبدئي_اجتازوا_ذ','مبدئي_اجتازوا_ي','مبدئي_لم_يجتازوا_ذ','مبدئي_لم_يجتازوا_ي','مبدئي_غائب_ذ','مبدئي_غائب_ي','نهائي_حاضرين_ذ','نهائي_حاضرين_ي','نهائي_اجتازوا_ذ','نهائي_اجتازوا_ي','نهائي_لم_يجتازوا_ذ','نهائي_لم_يجتازوا_ي','نهائي_غائب_ذ','نهائي_غائب_ي'].forEach(function(k){ grand[k]=0; });
+    TYPE_ORDER.forEach(function(type){ var t=d[type]; if(!t) return; grand.count+=(t.count||0); Object.keys(grand).forEach(function(k){ if(k!=='count') grand[k]+=(t[k]||0); }); });
+    summaryData.push(buildTypeRow('الصف '+(g===1?'الأول':'الثاني'), grand));
+  });
+  var wsSummary = XLSX.utils.aoa_to_sheet(summaryData);
+  XLSX.utils.book_append_sheet(wb, wsSummary, 'إجمالي عام');
+
+  XLSX.writeFile(wb, 'الإحصاء_بالنوعيات_2026.xlsx');
+}
+
+// ============================================================
+// طباعة الإحصاء التجميعي — نافذة طباعة منسّقة
+// ============================================================
+function printAggregate() {
+  if (!aggData) return;
+  var today = new Date().toLocaleDateString('ar-EG');
+
+  function buildTable(g) {
+    var d = aggData[String(g)] || {};
+    var grandVals = {};
+    ['مقيدين_ذ','مقيدين_ي','حاضرين60_ذ','حاضرين60_ي',
+     'مبدئي_حاضرين_ذ','مبدئي_حاضرين_ي','مبدئي_اجتازوا_ذ','مبدئي_اجتازوا_ي',
+     'مبدئي_لم_يجتازوا_ذ','مبدئي_لم_يجتازوا_ي','مبدئي_غائب_ذ','مبدئي_غائب_ي',
+     'نهائي_حاضرين_ذ','نهائي_حاضرين_ي','نهائي_اجتازوا_ذ','نهائي_اجتازوا_ي',
+     'نهائي_لم_يجتازوا_ذ','نهائي_لم_يجتازوا_ي','نهائي_غائب_ذ','نهائي_غائب_ي'].forEach(function(k){ grandVals[k]=0; });
+    var grandCount = 0;
+
+    var html = '<h3 style="color:#0F6E56;margin:12px 0 6px;font-size:13px">الصف '+(g===1?'الأول':'الثاني')+' الابتدائي — استمارة (1)</h3>';
+    html += '<table><thead>'
+      + '<tr style="background:#0F6E56;color:#fff">'
+      + '<th>النوعية</th><th>مدارس</th>'
+      + '<th colspan="3">المقيدون</th><th colspan="3">حاضر60%</th>'
+      + '<th colspan="3">مبدئي-حاضر</th><th colspan="3">مبدئي-اجتاز</th>'
+      + '<th colspan="3">مبدئي-لم يجتز</th><th colspan="3">مبدئي-غائب</th>'
+      + '<th colspan="3">نهائي-حاضر</th><th colspan="3">نهائي-اجتاز</th>'
+      + '<th colspan="3">نهائي-لم يجتز</th><th colspan="3">نهائي-غائب</th>'
+      + '</tr>'
+      + '<tr style="background:#1D9E75;color:#fff;font-size:9px">'
+      + '<th></th><th></th>'
+      + '<th>ذ</th><th>ي</th><th>ج</th><th>ذ</th><th>ي</th><th>ج</th>'
+      + '<th>ذ</th><th>ي</th><th>ج</th><th>ذ</th><th>ي</th><th>ج</th>'
+      + '<th>ذ</th><th>ي</th><th>ج</th><th>ذ</th><th>ي</th><th>ج</th>'
+      + '<th>ذ</th><th>ي</th><th>ج</th><th>ذ</th><th>ي</th><th>ج</th>'
+      + '<th>ذ</th><th>ي</th><th>ج</th><th>ذ</th><th>ي</th><th>ج</th>'
+      + '</tr></thead><tbody>';
+
+    TYPE_ORDER.forEach(function(type) {
+      var t = d[type]; if (!t) return;
+      function v(k){ return t[k]||0; }
+      function s(m,f){ return v(m)+v(f); }
+      Object.keys(grandVals).forEach(function(k){ grandVals[k]+=(t[k]||0); });
+      grandCount += t.count||0;
+
+      html += '<tr><td style="text-align:right">'+type.replace('مدارس ','')+'</td><td>'+t.count+'</td>'
+        + '<td>'+v('مقيدين_ذ')+'</td><td>'+v('مقيدين_ي')+'</td><td>'+s('مقيدين_ذ','مقيدين_ي')+'</td>'
+        + '<td>'+v('حاضرين60_ذ')+'</td><td>'+v('حاضرين60_ي')+'</td><td>'+s('حاضرين60_ذ','حاضرين60_ي')+'</td>'
+        + '<td>'+v('مبدئي_حاضرين_ذ')+'</td><td>'+v('مبدئي_حاضرين_ي')+'</td><td>'+s('مبدئي_حاضرين_ذ','مبدئي_حاضرين_ي')+'</td>'
+        + '<td>'+v('مبدئي_اجتازوا_ذ')+'</td><td>'+v('مبدئي_اجتازوا_ي')+'</td><td>'+s('مبدئي_اجتازوا_ذ','مبدئي_اجتازوا_ي')+'</td>'
+        + '<td>'+v('مبدئي_لم_يجتازوا_ذ')+'</td><td>'+v('مبدئي_لم_يجتازوا_ي')+'</td><td>'+s('مبدئي_لم_يجتازوا_ذ','مبدئي_لم_يجتازوا_ي')+'</td>'
+        + '<td>'+v('مبدئي_غائب_ذ')+'</td><td>'+v('مبدئي_غائب_ي')+'</td><td>'+s('مبدئي_غائب_ذ','مبدئي_غائب_ي')+'</td>'
+        + '<td>'+v('نهائي_حاضرين_ذ')+'</td><td>'+v('نهائي_حاضرين_ي')+'</td><td>'+s('نهائي_حاضرين_ذ','نهائي_حاضرين_ي')+'</td>'
+        + '<td>'+v('نهائي_اجتازوا_ذ')+'</td><td>'+v('نهائي_اجتازوا_ي')+'</td><td>'+s('نهائي_اجتازوا_ذ','نهائي_اجتازوا_ي')+'</td>'
+        + '<td>'+v('نهائي_لم_يجتازوا_ذ')+'</td><td>'+v('نهائي_لم_يجتازوا_ي')+'</td><td>'+s('نهائي_لم_يجتازوا_ذ','نهائي_لم_يجتازوا_ي')+'</td>'
+        + '<td>'+v('نهائي_غائب_ذ')+'</td><td>'+v('نهائي_غائب_ي')+'</td><td>'+s('نهائي_غائب_ذ','نهائي_غائب_ي')+'</td>'
+        + '</tr>';
+    });
+
+    function gv(k){ return grandVals[k]||0; }
+    function gs(m,f){ return gv(m)+gv(f); }
+    html += '<tr style="background:#E1F5EE;font-weight:700"><td style="text-align:right">الإجمالي</td><td>'+grandCount+'</td>'
+      + '<td>'+gv('مقيدين_ذ')+'</td><td>'+gv('مقيدين_ي')+'</td><td>'+gs('مقيدين_ذ','مقيدين_ي')+'</td>'
+      + '<td>'+gv('حاضرين60_ذ')+'</td><td>'+gv('حاضرين60_ي')+'</td><td>'+gs('حاضرين60_ذ','حاضرين60_ي')+'</td>'
+      + '<td>'+gv('مبدئي_حاضرين_ذ')+'</td><td>'+gv('مبدئي_حاضرين_ي')+'</td><td>'+gs('مبدئي_حاضرين_ذ','مبدئي_حاضرين_ي')+'</td>'
+      + '<td>'+gv('مبدئي_اجتازوا_ذ')+'</td><td>'+gv('مبدئي_اجتازوا_ي')+'</td><td>'+gs('مبدئي_اجتازوا_ذ','مبدئي_اجتازوا_ي')+'</td>'
+      + '<td>'+gv('مبدئي_لم_يجتازوا_ذ')+'</td><td>'+gv('مبدئي_لم_يجتازوا_ي')+'</td><td>'+gs('مبدئي_لم_يجتازوا_ذ','مبدئي_لم_يجتازوا_ي')+'</td>'
+      + '<td>'+gv('مبدئي_غائب_ذ')+'</td><td>'+gv('مبدئي_غائب_ي')+'</td><td>'+gs('مبدئي_غائب_ذ','مبدئي_غائب_ي')+'</td>'
+      + '<td>'+gv('نهائي_حاضرين_ذ')+'</td><td>'+gv('نهائي_حاضرين_ي')+'</td><td>'+gs('نهائي_حاضرين_ذ','نهائي_حاضرين_ي')+'</td>'
+      + '<td>'+gv('نهائي_اجتازوا_ذ')+'</td><td>'+gv('نهائي_اجتازوا_ي')+'</td><td>'+gs('نهائي_اجتازوا_ذ','نهائي_اجتازوا_ي')+'</td>'
+      + '<td>'+gv('نهائي_لم_يجتازوا_ذ')+'</td><td>'+gv('نهائي_لم_يجتازوا_ي')+'</td><td>'+gs('نهائي_لم_يجتازوا_ذ','نهائي_لم_يجتازوا_ي')+'</td>'
+      + '<td>'+gv('نهائي_غائب_ذ')+'</td><td>'+gv('نهائي_غائب_ي')+'</td><td>'+gs('نهائي_غائب_ذ','نهائي_غائب_ي')+'</td>'
+      + '</tr></tbody></table>';
+    return html;
+  }
+
+  var html = '<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8">'
+    + '<title>الإحصاء التجميعي 2026</title><style>'
+    + 'body{font-family:Arial,sans-serif;direction:rtl;padding:15px;color:#222;font-size:11px}'
+    + '.header{text-align:center;border-bottom:3px solid #0F6E56;padding-bottom:10px;margin-bottom:14px}'
+    + '.header h1{font-size:15px;color:#0F6E56;margin:2px 0}'
+    + '.header p{margin:2px 0;font-size:11px;color:#555}'
+    + 'table{width:100%;border-collapse:collapse;margin-bottom:12px;font-size:9px}'
+    + 'th{padding:4px 3px;text-align:center;border:1px solid #bbb}'
+    + 'td{padding:3px 4px;border:1px solid #ccc;text-align:center}'
+    + 'tr:nth-child(even) td{background:#f7faf7}'
+    + '.page-break{page-break-after:always;margin:16px 0;border-top:2px dashed #ccc}'
+    + '@media print{button{display:none}.page-break{border:none}}'
+    + '</style></head><body>'
+    + '<div class="header">'
+    + '<p>محافظة الجيزة — مديرية التربية والتعليم بالجيزة</p>'
+    + '<h1>إدارة العمرانية التعليمية</h1>'
+    + '<p>الإحصاء التجميعي — نهاية العام الدراسي 2025/2026 &nbsp;|&nbsp; تاريخ التصدير: '+today+'</p>'
+    + '</div>'
+    + '<button onclick="window.print()" style="margin-bottom:12px;padding:7px 18px;background:#0F6E56;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:12px">🖨️ طباعة</button>'
+    + buildTable(1)
+    + '<div class="page-break"></div>'
+    + buildTable(2)
+    + '</body></html>';
+
+  var w = window.open('','_blank','width=1200,height=700');
+  w.document.write(html);
+  w.document.close();
+  setTimeout(function(){ w.print(); }, 600);
 }
 </script>
 </body>
