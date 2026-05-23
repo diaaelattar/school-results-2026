@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>بيان درجات المواد — بوابة المدارس 2026</title>
+<style>
+:root{--g:#1D9E75;--gl:#E1F5EE;--gd:#0F6E56;--red:#E24B4A;--rl:#FCEBEB;
+  --amb:#BA7517;--aml:#FAEEDA;--blue:#1565C0;--bl:#E3F2FD;--pur:#6A1B9A;--pl:#F3E5F5;
+  --border:#D3D1C7;--text:#2C2C2A;--muted:#5F5E5A;--white:#fff;--gray:#F5F5F2}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI','Cairo',Tahoma,sans-serif;background:var(--gray);
+  min-height:100vh;color:var(--text);direction:rtl}
+
+/* Topbar */
+.topbar{background:var(--gd);color:#fff;padding:.7rem 1.3rem;display:flex;
+  align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem;
+  position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,.2)}
+.topbar h2{font-size:.94rem;font-weight:600}
+.type-badge{background:rgba(255,255,255,.18);padding:2px 9px;border-radius:20px;
+  font-size:.73rem;margin-right:.4rem}
+.top-actions{display:flex;gap:.5rem}
+.tbtn{padding:5px 12px;border-radius:6px;font-size:.78rem;font-family:inherit;
+  cursor:pointer;font-weight:600;border:none}
+.tbtn-outline{background:transparent;color:#9FE1CB;border:1px solid #9FE1CB}
+.tbtn-outline:hover{background:rgba(255,255,255,.1)}
+.tbtn-danger{background:rgba(226,75,74,.18);color:#FFAAAA;border:1px solid rgba(226,75,74,.35)}
+.tbtn-danger:hover{background:rgba(226,75,74,.32)}
+.nav-links{display:flex;gap:.4rem}
+.nav-link{padding:5px 10px;border-radius:6px;font-size:.75rem;font-family:inherit;
+  cursor:pointer;font-weight:600;border:none;background:rgba(255,255,255,.1);
+  color:#fff;text-decoration:none;display:flex;align-items:center;gap:.3rem}
+.nav-link:hover{background:rgba(255,255,255,.2)}
+
+.main{max-width:960px;margin:0 auto;padding:1.2rem 1rem 4rem}
+
+/* Banners */
+.banner{padding:.85rem 1.1rem;border-radius:10px;margin-bottom:.9rem;
+  display:none;align-items:flex-start;gap:.7rem;font-size:.87rem}
+.banner.on{display:flex}
+.ban-warn{background:var(--aml);color:#7F4900;border:1px solid #FAC775}
+.ban-ok  {background:var(--gl);color:var(--gd);border:1px solid #9FE1CB}
+.ban-err {background:var(--rl);color:#7B1D1D;border:1px solid #F7C1C1}
+.ban-wait{background:var(--bl);color:var(--blue);border:1px solid #90CAF9}
+
+/* Subject tabs */
+.subj-tabs{display:flex;flex-wrap:wrap;gap:.35rem;margin-bottom:1.1rem}
+.subj-tab{padding:9px 16px;border:1.5px solid var(--border);border-radius:9px;
+  background:var(--white);cursor:pointer;font-size:.87rem;font-family:inherit;
+  font-weight:600;color:var(--muted);transition:all .18s}
+.subj-tab.active{border-color:var(--g);background:var(--gl);color:var(--gd)}
+.subj-tab .subj-icon{margin-left:.4rem}
+
+/* Grade card */
+.grade-card{background:var(--white);border-radius:12px;padding:1.2rem 1.4rem;
+  margin-bottom:1rem;box-shadow:0 2px 10px rgba(0,0,0,.07);border:1px solid var(--border)}
+.grade-hdr{display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:1rem;padding-bottom:.7rem;border-bottom:1px solid var(--border)}
+.grade-title{font-size:.95rem;font-weight:700;color:var(--gd)}
+.total-badge{background:var(--gl);color:var(--gd);padding:4px 12px;
+  border-radius:20px;font-size:.85rem;font-weight:700}
+
+/* Distribution grid */
+.dist-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:.7rem}
+.dist-cell{text-align:center}
+.dist-cell label{display:block;font-size:.74rem;font-weight:600;margin-bottom:.35rem;
+  padding:4px 6px;border-radius:6px;line-height:1.3}
+.lbl-lt50 {background:#FFEBEE;color:#C62828}
+.lbl-5065 {background:#FFF8E1;color:#F57F17}
+.lbl-6585 {background:#E8F5E9;color:#2E7D32}
+.lbl-85100{background:var(--bl);color:var(--blue)}
+.dist-cell input{width:100%;padding:8px 4px;border:1.5px solid var(--border);
+  border-radius:8px;font-size:1rem;text-align:center;font-family:inherit;
+  font-weight:600;background:var(--white);transition:border .15s}
+.dist-cell input:focus{outline:none;border-color:var(--g);
+  box-shadow:0 0 0 2px rgba(29,158,117,.1)}
+.dist-cell input.err{border-color:var(--red);background:var(--rl)}
+.val-msg{font-size:.72rem;margin-top:.25rem;text-align:center;min-height:16px}
+.val-ok {color:var(--gd)}
+.val-err{color:var(--red)}
+
+/* Summary row */
+.summary-row{display:grid;grid-template-columns:repeat(4,1fr);gap:.5rem;
+  margin-top:.8rem;padding-top:.7rem;border-top:1px dashed var(--border)}
+.sum-item{text-align:center;font-size:.75rem}
+.sum-pct{font-size:.9rem;font-weight:700;color:var(--gd)}
+
+/* Submit */
+.actions{display:flex;gap:.8rem;flex-wrap:wrap;margin-top:1.3rem}
+.btn-save{padding:11px 28px;background:var(--g);color:#fff;border:none;
+  border-radius:9px;font-size:.94rem;font-weight:700;font-family:inherit;
+  cursor:pointer;flex:1;display:flex;align-items:center;justify-content:center;gap:.5rem}
+.btn-save:hover{background:var(--gd)}
+.btn-save:disabled{background:#bbb;cursor:not-allowed}
+.spin{width:15px;height:15px;border:2px solid rgba(255,255,255,.3);
+  border-top-color:#fff;border-radius:50%;animation:sp .6s linear infinite;display:none}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+/* Modal */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:999;
+  display:none;align-items:center;justify-content:center}
+.modal-bg.on{display:flex}
+.modal{background:var(--white);border-radius:14px;padding:1.8rem;width:370px;
+  max-width:95%;box-shadow:0 8px 30px rgba(0,0,0,.15)}
+.modal h3{font-size:1rem;color:var(--gd);margin-bottom:1.2rem}
+.mfield{margin-bottom:.8rem}
+.mfield label{display:block;font-size:.82rem;font-weight:600;margin-bottom:.3rem}
+.mfield input{width:100%;padding:9px 11px;border:1.5px solid var(--border);
+  border-radius:8px;font-size:.92rem;font-family:inherit}
+.mfield input:focus{outline:none;border-color:var(--g)}
+.merr{color:var(--red);font-size:.78rem;margin-top:.4rem;display:none}
+.merr.on{display:block}
+.mbtn-row{display:flex;gap:.6rem;margin-top:1.1rem}
+.mbtn-row button{flex:1;padding:9px;border-radius:8px;cursor:pointer;
+  font-family:inherit;font-size:.9rem;font-weight:600;border:none}
+.mbtn-ok{background:var(--g);color:#fff}
+.mbtn-cancel{background:var(--gray);color:var(--text)}
+
+/* Print */
+@media print{
+  .topbar,.actions,.subj-tabs,.ban-warn,.ban-ok,.ban-err,.ban-wait,
+  .modal-bg{display:none!important}
+  body{background:#fff}
+  .grade-card{box-shadow:none;border:1px solid #999;page-break-inside:avoid}
+  .main{padding:.5cm}
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div style="display:flex;align-items:center;gap:.6rem">
+    <span style="font-size:1.3rem">🏫</span>
+    <div>
+      <h2 id="top-name">…</h2>
+      <span class="type-badge" id="top-type"></span>
+    </div>
+  </div>
+  <div class="top-actions">
+    <div class="nav-links">
+      <a class="nav-link" href="form.html">📋 استمارة ١</a>
+    </div>
+    <button class="tbtn tbtn-outline" onclick="openPwdModal()">🔑 تغيير كلمة المرور</button>
+    <button class="tbtn tbtn-danger"  onclick="logout()">↩ خروج</button>
+  </div>
+</div>
+
+<div class="main">
+  <div id="b-exists" class="banner ban-warn">
+    <span style="font-size:1.2rem">📋</span>
+    <div><strong>بيانات الدرجات محفوظة مسبقاً.</strong> يمكنك تعديلها ثم الحفظ.</div>
+  </div>
+  <div id="b-ok"   class="banner ban-ok"><span>✅</span><span id="b-ok-msg"></span></div>
+  <div id="b-err"  class="banner ban-err"><span>⚠️</span><span id="b-err-msg"></span></div>
+  <div id="b-wait" class="banner ban-wait"><span>🔄</span><span id="b-wait-msg">جارٍ إعادة المحاولة…</span></div>
+
+  <!-- تبويبات المواد -->
+  <div class="subj-tabs" id="subj-tabs"></div>
+
+  <!-- محتوى المادة -->
+  <div id="subj-content"></div>
+
+  <div class="actions">
+    <button class="btn-save" id="saveBtn" onclick="saveData()">
+      <span class="spin" id="spin"></span>
+      <span id="savetxt">📤 حفظ بيانات الدرجات</span>
+    </button>
+  </div>
+</div>
+
+<!-- Modal كلمة المرور -->
+<div class="modal-bg" id="pwd-modal">
+  <div class="modal">
+    <h3>🔑 تغيير كلمة المرور</h3>
+    <div class="mfield"><label>كلمة المرور الحالية</label>
+      <input type="password" id="old-pwd"/></div>
+    <div class="mfield"><label>كلمة المرور الجديدة</label>
+      <input type="password" id="new-pwd"/></div>
+    <div class="mfield"><label>تأكيد كلمة المرور</label>
+      <input type="password" id="cnf-pwd"/></div>
+    <div class="merr" id="pwd-err"></div>
+    <div class="mbtn-row">
+      <button class="mbtn-ok"     onclick="changePwd()">✅ تغيير</button>
+      <button class="mbtn-cancel" onclick="closePwdModal()">إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<script>
+var GAS   = 'https://script.google.com/macros/s/AKfycby6t3Khu9_NDYrO4qNkpkcsu__Oizd3LXrSr4gfWwWr5nibBh_4vzQo430icz-AgvhYfg/exec';
+var SID   = sessionStorage.getItem('school_id');
+var SNAME = sessionStorage.getItem('school_name');
+var STYPE = sessionStorage.getItem('school_type');
+var SPWD  = sessionStorage.getItem('password');
+if (!SID) { window.location.href = 'index.html'; }
+
+var isEdit    = false;
+var curSubj   = 0;
+
+// ══ تعريف المواد والصفوف ══════════════════════════════════════
+var SUBJECTS = [
+  { k:'ara',  ar:'اللغة العربية',     icon:'📖', color:'#1565C0' },
+  { k:'eng',  ar:'اللغة الإنجليزية', icon:'🌍', color:'#2E7D32' },
+  { k:'math', ar:'الرياضيات',         icon:'🔢', color:'#6A1B9A' },
+  { k:'rel',  ar:'التربية الدينية',   icon:'☪️', color:'#BA7517' },
+];
+var GRADES = [
+  { g:1, ar:'الصف الأول الابتدائى' },
+  { g:2, ar:'الصف الثانى الابتدائى' },
+];
+var RANGES = [
+  { k:'lt50',  ar:'أقل من 50%',     cls:'lbl-lt50'  },
+  { k:'r5065', ar:'من 50% إلى 65%', cls:'lbl-5065'  },
+  { k:'r6585', ar:'من 65% إلى 85%', cls:'lbl-6585'  },
+  { k:'r85',   ar:'من 85% إلى 100%',cls:'lbl-85100' },
+];
+
+// ══ بناء واجهة المادة ════════════════════════════════════════
+function buildSubjTabs() {
+  var tabs = document.getElementById('subj-tabs');
+  tabs.innerHTML = SUBJECTS.map(function(s,i) {
+    return '<button class="subj-tab'+(i===0?' active':'')+'" id="stab-'+i+'" onclick="setSubj('+i+')">'
+      + '<span class="subj-icon">'+s.icon+'</span>'+s.ar+'</button>';
+  }).join('');
+}
+
+function buildSubjContent(si) {
+  var s   = SUBJECTS[si];
+  var html = '';
+  GRADES.forEach(function(gr) {
+    var p = s.k + '_' + gr.g + '_';
+    html += '<div class="grade-card">';
+    html += '<div class="grade-hdr">';
+    html += '<div class="grade-title">' + gr.ar + '</div>';
+    html += '<div class="total-badge">الإجمالي: <span id="'+p+'total">0</span> طالب</div>';
+    html += '</div>';
+    // شبكة توزيع النسب
+    html += '<div class="dist-grid">';
+    RANGES.forEach(function(r) {
+      var fid = p + r.k;
+      html += '<div class="dist-cell">';
+      html += '<label class="'+r.cls+'" for="'+fid+'">'+r.ar+'</label>';
+      html += '<input type="number" id="'+fid+'" min="0" value="0" oninput="calcGrade(\''+p+'\')" />';
+      html += '<div class="val-msg" id="'+fid+'_msg"></div>';
+      html += '</div>';
+    });
+    html += '</div>';
+    // ملخص النسب
+    html += '<div class="summary-row">';
+    RANGES.forEach(function(r) {
+      html += '<div class="sum-item">';
+      html += '<div class="sum-pct" id="'+p+r.k+'_pct">—</div>';
+      html += '<div>'+r.ar+'</div>';
+      html += '</div>';
+    });
+    html += '</div>';
+    html += '</div>';
+  });
+  return html;
+}
+
+function setSubj(i) {
+  curSubj = i;
+  document.querySelectorAll('.subj-tab').forEach(function(t,j){
+    t.classList.toggle('active', j===i);
+  });
+  document.getElementById('subj-content').innerHTML = buildSubjContent(i);
+  // ملء البيانات المحفوظة إن وجدت
+  fillCurrentSubj();
+}
+
+// ══ حساب الإجمالى والنسب ═════════════════════════════════════
+function calcGrade(p) {
+  var total = 0;
+  RANGES.forEach(function(r) {
+    total += parseInt(document.getElementById(p+r.k).value)||0;
+  });
+  var el = document.getElementById(p+'total');
+  if (el) el.textContent = total;
+  // النسب المئوية
+  RANGES.forEach(function(r) {
+    var val = parseInt(document.getElementById(p+r.k).value)||0;
+    var pct = total > 0 ? (val/total*100).toFixed(1)+'%' : '—';
+    var pe  = document.getElementById(p+r.k+'_pct');
+    if (pe) pe.textContent = pct;
+  });
+  validateGrade(p, total);
+}
+
+function validateGrade(p, total) {
+  RANGES.forEach(function(r) {
+    var val = parseInt(document.getElementById(p+r.k).value)||0;
+    var me  = document.getElementById(p+r.k+'_msg');
+    if (me) { me.textContent=''; me.className='val-msg'; }
+  });
+}
+
+// ══ جمع بيانات الفورم ════════════════════════════════════════
+var SAVED = {};  // تخزين مؤقت للبيانات قبل تبديل المواد
+
+function snapshotCurrentSubj() {
+  var s = SUBJECTS[curSubj];
+  SAVED[s.k] = {};
+  GRADES.forEach(function(gr) {
+    var p = s.k + '_' + gr.g + '_';
+    RANGES.forEach(function(r) {
+      var el = document.getElementById(p+r.k);
+      SAVED[s.k][p+r.k] = el ? (parseInt(el.value)||0) : 0;
+    });
+  });
+}
+
+function fillCurrentSubj() {
+  var s = SUBJECTS[curSubj];
+  if (!SAVED[s.k]) return;
+  GRADES.forEach(function(gr) {
+    var p = s.k + '_' + gr.g + '_';
+    RANGES.forEach(function(r) {
+      var el = document.getElementById(p+r.k);
+      if (el) { el.value = SAVED[s.k][p+r.k] || 0; }
+    });
+    calcGrade(p);
+  });
+}
+
+function collectAllData() {
+  // حفظ الـ snapshot للمادة الحالية أولاً
+  snapshotCurrentSubj();
+  var d = {
+    action:      isEdit ? 'updateGrades' : 'submitGrades',
+    school_id:   SID,
+    school_name: SNAME,
+    school_type: STYPE,
+    password:    SPWD,
+  };
+  SUBJECTS.forEach(function(s) {
+    GRADES.forEach(function(gr) {
+      var p = s.k + '_' + gr.g + '_';
+      var src = SAVED[s.k] || {};
+      RANGES.forEach(function(r) {
+        d[p+r.k] = src[p+r.k] || 0;
+      });
+    });
+  });
+  return d;
+}
+
+// ══ تحميل البيانات الموجودة ════════════════════════════════
+function populateFromServer(gData) {
+  SUBJECTS.forEach(function(s) {
+    SAVED[s.k] = {};
+    GRADES.forEach(function(gr) {
+      var p = s.k + '_' + gr.g + '_';
+      RANGES.forEach(function(r) {
+        var k = p+r.k;
+        SAVED[s.k][k] = gData[k] || 0;
+      });
+    });
+  });
+  fillCurrentSubj();
+}
+
+// ══ حفظ البيانات مع إعادة المحاولة ═════════════════════════
+async function saveData() {
+  hideBanners();
+  snapshotCurrentSubj();
+  var d = collectAllData();
+  setLoading(true);
+  var MAX = 4;
+  for (var attempt=1; attempt<=MAX; attempt++) {
+    try {
+      var res  = await fetch(GAS, { method:'POST', body: JSON.stringify(d) });
+      var json = await res.json();
+      if (json.locked) {
+        showBanner('b-wait','جارٍ إعادة المحاولة ('+attempt+'/'+MAX+')…');
+        if (attempt<MAX) { await sleep(3500); continue; }
+        showBanner('b-err','الخادم مشغول. حاول بعد دقيقة.');
+        break;
+      }
+      hideBanners();
+      if (json.success) {
+        isEdit=true; d.action='updateGrades';
+        showBanner('b-ok','✅ تم حفظ بيانات الدرجات بنجاح');
+        document.getElementById('b-exists').classList.add('on');
+        document.getElementById('savetxt').textContent='💾 حفظ التعديلات';
+        break;
+      } else if (json.alreadyExists) {
+        isEdit=true; d.action='updateGrades';
+        document.getElementById('b-exists').classList.add('on');
+        showBanner('b-err','البيانات موجودة مسبقاً — وضع التعديل مفعَّل.');
+        document.getElementById('savetxt').textContent='💾 حفظ التعديلات';
+        break;
+      } else {
+        showBanner('b-err', json.error || 'حدث خطأ غير متوقع'); break;
+      }
+    } catch(e) {
+      if (attempt===MAX) showBanner('b-err','فشل الاتصال. تحقق من الإنترنت.');
+      else await sleep(2500);
+    }
+  }
+  setLoading(false);
+}
+
+// ══ كلمة المرور ══════════════════════════════════════════════
+function openPwdModal(){ document.getElementById('pwd-modal').classList.add('on'); }
+function closePwdModal(){
+  document.getElementById('pwd-modal').classList.remove('on');
+  document.getElementById('pwd-err').classList.remove('on');
+  ['old-pwd','new-pwd','cnf-pwd'].forEach(function(id){ document.getElementById(id).value=''; });
+}
+async function changePwd(){
+  var old=document.getElementById('old-pwd').value;
+  var nw=document.getElementById('new-pwd').value;
+  var cnf=document.getElementById('cnf-pwd').value;
+  var err=document.getElementById('pwd-err');
+  err.classList.remove('on');
+  if(!old||!nw){err.textContent='جميع الحقول مطلوبة';err.classList.add('on');return;}
+  if(nw.length<4){err.textContent='4 أحرف على الأقل';err.classList.add('on');return;}
+  if(nw!==cnf){err.textContent='كلمتا المرور غير متطابقتين';err.classList.add('on');return;}
+  try{
+    var res=await fetch(GAS,{method:'POST',body:JSON.stringify({action:'changePassword',school_id:SID,oldPassword:old,newPassword:nw})});
+    var json=await res.json();
+    if(json.success){sessionStorage.setItem('password',nw);SPWD=nw;closePwdModal();showBanner('b-ok','✅ تم تغيير كلمة المرور');}
+    else{err.textContent=json.error||'فشل التغيير';err.classList.add('on');}
+  }catch(e){err.textContent='خطأ فى الاتصال';err.classList.add('on');}
+}
+function logout(){ sessionStorage.clear(); window.location.href='index.html'; }
+
+// ══ مساعدات ══════════════════════════════════════════════════
+function sleep(ms){ return new Promise(function(r){ setTimeout(r,ms); }); }
+function hideBanners(){ ['b-ok','b-err','b-wait'].forEach(function(id){ document.getElementById(id).classList.remove('on'); }); }
+function showBanner(id,msg){ var el=document.getElementById(id); var sp=el.querySelector('span:last-child'); if(sp&&msg)sp.textContent=msg; el.classList.add('on'); }
+function setLoading(v){ document.getElementById('saveBtn').disabled=v; document.getElementById('spin').style.display=v?'inline-block':'none'; if(!v)document.getElementById('savetxt').textContent=isEdit?'💾 حفظ التعديلات':'📤 حفظ بيانات الدرجات'; else document.getElementById('savetxt').textContent='جارٍ الحفظ…'; }
+
+// ══ تهيئة ════════════════════════════════════════════════════
+(async function init(){
+  document.getElementById('top-name').textContent = SNAME||'';
+  document.getElementById('top-type').textContent = STYPE||'';
+  buildSubjTabs();
+  setSubj(0);
+  // تحميل بيانات موجودة
+  try{
+    var r=await fetch(GAS+'?action=getGrades&school_id='+SID);
+    var json=await r.json();
+    if(json.success&&json.exists){
+      isEdit=true;
+      populateFromServer(json.data);
+      document.getElementById('b-exists').classList.add('on');
+      document.getElementById('savetxt').textContent='💾 حفظ التعديلات';
+    }
+  }catch(e){}
+})();
+</script>
+</body>
+</html>
